@@ -17,22 +17,20 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-
 	cfg, err := config.MustLoad()
 	if err != nil {
-		slog.Error("Failed to load config", "error", err.Error())
+		slog.Error("failed to load config", "error", err.Error())
 		return
 	}
 
 	db, err := repository.InitDataStore(cfg)
 	if err != nil {
-		slog.Error("Failed to connect to database", "error", err.Error())
+		slog.Error("failed to connect to database", "error", err.Error())
 		return
 	}
 	defer db.Close()
 
-	services := app.NewServices(db)
+	services := app.NewServices(db, cfg)
 
 	router := api.NewRouter(services)
 
@@ -54,23 +52,23 @@ func main() {
 	)
 
 	go func() {
-		slog.Info("Server listening at", "port", cfg.HTTPServer.Port)
+		slog.Info("server listening at", "port", cfg.HTTPServer.Port)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Server error", slog.String("error", err.Error()))
+			slog.Error("server error", "error", err.Error())
 			serverRunning <- syscall.SIGINT
 		}
 	}()
 
 	<-serverRunning
 
-	slog.Info("Shutting down the server")
-	ctxWT, cancel := context.WithTimeout(ctx, 10*time.Second)
+	slog.Info("shutting down the server")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(ctxWT); err != nil {
-		slog.Error("Cannot shut HTTP server down gracefully", "error", err.Error())
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("cannot shut HTTP server down gracefully", "error", err.Error())
 	}
 
-	slog.Info("Server shutdown successfully")
+	slog.Info("server shutdown successfully")
 }

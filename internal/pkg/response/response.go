@@ -2,23 +2,29 @@ package response
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 )
 
 func WriteJson(w http.ResponseWriter, statusCode int, message string, data interface{}) {
 	response := Response{
 		Message: message,
-		Result:  data,
+		Data:    data,
 	}
 
 	marshaledResponse, err := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
-		slog.Error("Failed to marshal response", slog.String("Error:", err.Error()))
+		slog.Error("failed to marshal response", "error", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{ "message" : "Failed to marshal response" }`))
+		_, err := w.Write([]byte(fmt.Sprintf(`{ "message" : "%s" }`, apperrors.ErrInternalServer.Error())))
+		if err != nil {
+			slog.Error("error occurred while writing response", "error", err.Error())
+		}
 		return
 	}
 
