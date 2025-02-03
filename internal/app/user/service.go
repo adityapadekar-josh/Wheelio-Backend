@@ -10,7 +10,6 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/email"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/model"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -21,12 +20,12 @@ type service struct {
 }
 
 type Service interface {
-	RegisterUser(ctx context.Context, userDetails model.CreateUserRequestBody, role string) error
-	LoginUser(ctx context.Context, loginDetails model.LoginUserRequestBody) (model.AccessToken, error)
+	RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error
+	LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error)
 	VerifyEmail(ctx context.Context, token string) error
 	ForgotPassword(ctx context.Context, email string) error
-	ResetPassword(ctx context.Context, resetPasswordDetails model.ResetPasswordRequestBody) error
-	GetLoggedInUser(ctx context.Context) (model.User, error)
+	ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error
+	GetLoggedInUser(ctx context.Context) (User, error)
 	UpgradeUserRoleToHost(ctx context.Context) error
 }
 
@@ -37,7 +36,7 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 	}
 }
 
-func (s *service) RegisterUser(ctx context.Context, userDetails model.CreateUserRequestBody, role string) error {
+func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error {
 	_, err := s.userRepository.GetUserByEmail(ctx, userDetails.Email)
 
 	if err == nil {
@@ -54,7 +53,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails model.CreateUser
 
 	userDetails.Password = hashedPassword
 
-	newUser, err := s.userRepository.CreateUser(ctx, userDetails, role)
+	newUser, err := s.userRepository.CreateUser(ctx, repository.CreateUserRequestBody(userDetails), role)
 	if err != nil {
 		return err
 	}
@@ -84,17 +83,17 @@ func (s *service) RegisterUser(ctx context.Context, userDetails model.CreateUser
 	return nil
 }
 
-func (s *service) LoginUser(ctx context.Context, loginDetails model.LoginUserRequestBody) (model.AccessToken, error) {
+func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error) {
 	user, err := s.userRepository.GetUserByEmail(ctx, loginDetails.Email)
 	if err != nil {
-		return model.AccessToken{}, apperrors.CustomHTTPErr{
+		return AccessToken{}, apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnauthorized,
 			Message:    "invalid email or password",
 		}
 	}
 
 	if !user.IsVerified {
-		return model.AccessToken{}, apperrors.CustomHTTPErr{
+		return AccessToken{}, apperrors.CustomHTTPErr{
 			StatusCode: http.StatusConflict,
 			Message:    "user account is not verified. please check your email",
 		}
@@ -102,7 +101,7 @@ func (s *service) LoginUser(ctx context.Context, loginDetails model.LoginUserReq
 
 	isPasswordCorrect := cryptokit.CheckPasswordHash(loginDetails.Password, user.Password)
 	if !isPasswordCorrect {
-		return model.AccessToken{}, apperrors.CustomHTTPErr{
+		return AccessToken{}, apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnauthorized,
 			Message:    "invalid email or password",
 		}
@@ -115,10 +114,10 @@ func (s *service) LoginUser(ctx context.Context, loginDetails model.LoginUserReq
 		"exp":   time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
 	if err != nil {
-		return model.AccessToken{}, err
+		return AccessToken{}, err
 	}
 
-	return model.AccessToken{AccessToken: token}, nil
+	return AccessToken{AccessToken: token}, nil
 }
 
 func (s *service) VerifyEmail(ctx context.Context, token string) error {
@@ -172,7 +171,7 @@ func (s *service) ForgotPassword(ctx context.Context, email string) error {
 	return nil
 }
 
-func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails model.ResetPasswordRequestBody) error {
+func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error {
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
 
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PASSWORD_RESET {
@@ -205,20 +204,20 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails model.
 	return nil
 }
 
-func (s *service) GetLoggedInUser(ctx context.Context) (model.User, error) {
+func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 	userId := ctx.Value("userId").(int)
 
 	user, err := s.userRepository.GetUserById(ctx, userId)
 	if err != nil {
-		return model.User{}, apperrors.CustomHTTPErr{
+		return User{}, apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnprocessableEntity,
 			Message:    apperrors.ErrUserNotFound.Error(),
 		}
 	}
 
-	user.RedactPassword()
+	redactedUser := redactPassword(User(user))
 
-	return user, nil
+	return redactedUser, nil
 }
 
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {

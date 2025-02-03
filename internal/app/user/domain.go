@@ -1,4 +1,4 @@
-package model
+package user
 
 import "time"
 
@@ -10,8 +10,8 @@ type User struct {
 	Password    string    `json:"password,omitempty"`
 	Role        string    `json:"role"`
 	IsVerified  bool      `json:"is_verified"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 type CreateUserRequestBody struct {
@@ -27,18 +27,24 @@ type LoginUserRequestBody struct {
 }
 
 type ResetPasswordRequestBody struct {
-	Token       string `json:"token" validate:"required"`
+	Token    string `json:"token" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 
-func (u *User) RedactPassword() {
-	u.Password = ""
+type AccessToken struct {
+	AccessToken string `json:"accessToken"`
 }
 
-type VerificationToken struct {
-	Id        int       `json:"id"`
-	UserId    int       `json:"user_id"`
-	Token     string    `json:"token"`
-	Type      string    `json:"type"`
-	ExpiresAt time.Time `json:"expires_at"`
+type Token struct {
+	Token string `json:"token"`
+}
+
+type Email struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+func redactPassword(user User) User {
+	user.Password = ""
+
+	return user
 }

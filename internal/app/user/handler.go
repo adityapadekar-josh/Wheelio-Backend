@@ -1,23 +1,21 @@
-package api
+package user
 
 import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
 
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/user"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/model"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
 	"github.com/go-playground/validator/v10"
 )
 
-func SignUpUser(userService user.Service) http.HandlerFunc {
+func SignUpUser(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody model.CreateUserRequestBody
+		var requestBody CreateUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FAILED_MARSHAL, "error", err.Error())
@@ -46,11 +44,11 @@ func SignUpUser(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func SignInUser(userService user.Service) http.HandlerFunc {
+func SignInUser(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody model.LoginUserRequestBody
+		var requestBody LoginUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FAILED_MARSHAL, "error", err.Error())
@@ -78,11 +76,11 @@ func SignInUser(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func VerifyEmail(userService user.Service) http.HandlerFunc {
+func VerifyEmail(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody model.Token
+		var requestBody Token
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FAILED_MARSHAL, "error", err.Error())
@@ -102,11 +100,11 @@ func VerifyEmail(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func ForgotPassword(userService user.Service) http.HandlerFunc {
+func ForgotPassword(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody model.Email
+		var requestBody Email
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FAILED_MARSHAL, "error", err.Error())
@@ -134,11 +132,11 @@ func ForgotPassword(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func ResetPassword(userService user.Service) http.HandlerFunc {
+func ResetPassword(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody model.ResetPasswordRequestBody
+		var requestBody ResetPasswordRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FAILED_MARSHAL, "error", err.Error())
@@ -166,7 +164,7 @@ func ResetPassword(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func GetLoggedInUser(userService user.Service) http.HandlerFunc {
+func GetLoggedInUser(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -182,11 +180,11 @@ func GetLoggedInUser(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func HostSignUpUser(userService user.Service) http.HandlerFunc {
+func HostSignUpUser(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody model.CreateUserRequestBody
+		var requestBody CreateUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FAILED_MARSHAL, "error", err.Error())
@@ -215,7 +213,7 @@ func HostSignUpUser(userService user.Service) http.HandlerFunc {
 	}
 }
 
-func UpgradeUserRoleToHost(userService user.Service) http.HandlerFunc {
+func UpgradeUserRoleToHost(userService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

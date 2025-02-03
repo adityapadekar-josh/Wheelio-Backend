@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/model"
 )
 
 type userRepository struct {
@@ -13,12 +11,12 @@ type userRepository struct {
 }
 
 type UserRepository interface {
-	GetUserById(ctx context.Context, userId int) (model.User, error)
-	GetUserByEmail(ctx context.Context, email string) (model.User, error)
-	CreateUser(ctx context.Context, userData model.CreateUserRequestBody, role string) (model.User, error)
+	GetUserById(ctx context.Context, userId int) (User, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
+	CreateUser(ctx context.Context, userData CreateUserRequestBody, role string) (User, error)
 	UpdateUserEmailVerifiedStatus(ctx context.Context, userId int) error
-	CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (model.VerificationToken, error)
-	GetVerificationTokenByToken(ctx context.Context, token string) (model.VerificationToken, error)
+	CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error)
+	GetVerificationTokenByToken(ctx context.Context, token string) (VerificationToken, error)
 	DeleteVerificationTokenById(ctx context.Context, tokenId int) error
 	UpdateUserPassword(ctx context.Context, userId int, password string) error
 	UpdateUserRole(ctx context.Context, userId int, role string) error
@@ -28,13 +26,13 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{DB: db}
 }
 
-func (ur *userRepository) CreateUser(ctx context.Context, userData model.CreateUserRequestBody, role string) (model.User, error) {
+func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserRequestBody, role string) (User, error) {
 	sqlStatement := `
 	INSERT INTO users (name, email, phone_number, password, role)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING *`
 
-	var user model.User
+	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
 		sqlStatement,
@@ -55,16 +53,16 @@ func (ur *userRepository) CreateUser(ctx context.Context, userData model.CreateU
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return model.User{}, err
+		return User{}, err
 	}
 
 	return user, nil
 }
 
-func (ur *userRepository) GetUserById(ctx context.Context, userId int) (model.User, error) {
+func (ur *userRepository) GetUserById(ctx context.Context, userId int) (User, error) {
 	sqlStatement := "SELECT * FROM users WHERE id=$1"
 
-	var user model.User
+	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
 		sqlStatement,
@@ -81,16 +79,16 @@ func (ur *userRepository) GetUserById(ctx context.Context, userId int) (model.Us
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return model.User{}, err
+		return User{}, err
 	}
 
 	return user, nil
 }
 
-func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
+func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	sqlStatement := "SELECT * FROM users WHERE email=$1"
 
-	var user model.User
+	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
 		sqlStatement,
@@ -108,7 +106,7 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (mod
 	)
 
 	if err != nil {
-		return model.User{}, err
+		return User{}, err
 	}
 
 	return user, nil
@@ -150,13 +148,13 @@ func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role s
 	return nil
 }
 
-func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (model.VerificationToken, error) {
+func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error) {
 	sqlStatement := `
 	INSERT INTO verification_tokens (user_id, token, type, expires_at)
 	VALUES ($1, $2, $3, $4)
 	RETURNING *`
 
-	var verificationToken model.VerificationToken
+	var verificationToken VerificationToken
 	err := ur.DB.QueryRowContext(
 		ctx,
 		sqlStatement,
@@ -179,10 +177,10 @@ func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId in
 	return verificationToken, nil
 }
 
-func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token string) (model.VerificationToken, error) {
+func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token string) (VerificationToken, error) {
 	sqlStatement := "SELECT * FROM verification_tokens WHERE token=$1"
 
-	var verificationToken model.VerificationToken
+	var verificationToken VerificationToken
 	err := ur.DB.QueryRowContext(
 		ctx,
 		sqlStatement,
