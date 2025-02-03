@@ -2,7 +2,6 @@ package apperrors
 
 import (
 	"errors"
-	"fmt"
 )
 
 var (
@@ -20,5 +19,13 @@ type CustomHTTPErr struct {
 }
 
 func (c CustomHTTPErr) Error() string {
-	return fmt.Sprint(c.Message)
+	return c.Message
+}
+
+type RequestBodyValidationErr struct {
+	Message string
+}
+
+func (r RequestBodyValidationErr) Error() string {
+	return r.Message
 }

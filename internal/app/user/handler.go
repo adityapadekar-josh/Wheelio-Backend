@@ -8,7 +8,6 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
-	"github.com/go-playground/validator/v10"
 )
 
 func SignUpUser(userService Service) http.HandlerFunc {
@@ -19,14 +18,6 @@ func SignUpUser(userService Service) http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FailedMarshal, "error", err.Error())
-			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
-			return
-		}
-
-		validate := validator.New()
-		err = validate.Struct(requestBody)
-		if err != nil {
-			slog.Error(constant.FailedValidation, "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
@@ -56,14 +47,6 @@ func SignInUser(userService Service) http.HandlerFunc {
 			return
 		}
 
-		validate := validator.New()
-		err = validate.Struct(requestBody)
-		if err != nil {
-			slog.Error(constant.FailedValidation, "error", err.Error())
-			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
-			return
-		}
-
 		loginData, err := userService.LoginUser(ctx, requestBody)
 		if err != nil {
 			slog.Error("failed to login user", "error", err.Error())
@@ -88,7 +71,7 @@ func VerifyEmail(userService Service) http.HandlerFunc {
 			return
 		}
 
-		err = userService.VerifyEmail(ctx, requestBody.Token)
+		err = userService.VerifyEmail(ctx, requestBody)
 		if err != nil {
 			slog.Error("failed to verify user email", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)
@@ -112,15 +95,7 @@ func ForgotPassword(userService Service) http.HandlerFunc {
 			return
 		}
 
-		validate := validator.New()
-		err = validate.Struct(requestBody)
-		if err != nil {
-			slog.Error(constant.FailedValidation, "error", err.Error())
-			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
-			return
-		}
-
-		err = userService.ForgotPassword(ctx, requestBody.Email)
+		err = userService.ForgotPassword(ctx, requestBody)
 		if err != nil {
 			slog.Error("failed to generate forgot password link", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)
@@ -140,14 +115,6 @@ func ResetPassword(userService Service) http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FailedMarshal, "error", err.Error())
-			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
-			return
-		}
-
-		validate := validator.New()
-		err = validate.Struct(requestBody)
-		if err != nil {
-			slog.Error(constant.FailedValidation, "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
@@ -188,14 +155,6 @@ func HostSignUpUser(userService Service) http.HandlerFunc {
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(constant.FailedMarshal, "error", err.Error())
-			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
-			return
-		}
-
-		validate := validator.New()
-		err = validate.Struct(requestBody)
-		if err != nil {
-			slog.Error(constant.FailedValidation, "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}

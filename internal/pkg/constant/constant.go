@@ -14,8 +14,10 @@ const (
 
 // Log messages
 const (
-	FailedMarshal    = "failed to parse request body"
-	FailedValidation = "validation failed"
+	FailedMarshal = "failed to parse request body"
 )
 
-const ()
+const (
+	EmailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	PhoneRegex = `^(?:(?:\+91)|91)?[0-9]{10}$`
+)

@@ -22,8 +22,8 @@ type service struct {
 type Service interface {
 	RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error
 	LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error)
-	VerifyEmail(ctx context.Context, token string) error
-	ForgotPassword(ctx context.Context, email string) error
+	VerifyEmail(ctx context.Context, token Token) error
+	ForgotPassword(ctx context.Context, email Email) error
 	ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error
 	GetLoggedInUser(ctx context.Context) (User, error)
 	UpgradeUserRoleToHost(ctx context.Context) error
@@ -37,7 +37,14 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 }
 
 func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error {
-	_, err := s.userRepository.GetUserByEmail(ctx, userDetails.Email)
+	err := userDetails.validate()
+	if err != nil {
+		return apperrors.RequestBodyValidationErr{
+			Message: err.Error(),
+		}
+	}
+
+	_, err = s.userRepository.GetUserByEmail(ctx, userDetails.Email)
 
 	if err == nil {
 		return apperrors.CustomHTTPErr{
@@ -84,6 +91,13 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 }
 
 func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error) {
+	err := loginDetails.validate()
+	if err != nil {
+		return AccessToken{}, apperrors.RequestBodyValidationErr{
+			Message: err.Error(),
+		}
+	}
+
 	user, err := s.userRepository.GetUserByEmail(ctx, loginDetails.Email)
 	if err != nil {
 		return AccessToken{}, apperrors.CustomHTTPErr{
@@ -120,8 +134,15 @@ func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBo
 	return AccessToken{AccessToken: token}, nil
 }
 
-func (s *service) VerifyEmail(ctx context.Context, token string) error {
-	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, token)
+func (s *service) VerifyEmail(ctx context.Context, token Token) error {
+	err := token.validate()
+	if err != nil {
+		return apperrors.RequestBodyValidationErr{
+			Message: err.Error(),
+		}
+	}
+
+	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, token.Token)
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.EmailVerification {
 		return apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnprocessableEntity,
@@ -139,8 +160,15 @@ func (s *service) VerifyEmail(ctx context.Context, token string) error {
 	return nil
 }
 
-func (s *service) ForgotPassword(ctx context.Context, email string) error {
-	user, err := s.userRepository.GetUserByEmail(ctx, email)
+func (s *service) ForgotPassword(ctx context.Context, email Email) error {
+	err := email.validate()
+	if err != nil {
+		return apperrors.RequestBodyValidationErr{
+			Message: err.Error(),
+		}
+	}
+
+	user, err := s.userRepository.GetUserByEmail(ctx, email.Email)
 
 	if err != nil {
 		return nil
@@ -172,6 +200,13 @@ func (s *service) ForgotPassword(ctx context.Context, email string) error {
 }
 
 func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error {
+	err := resetPasswordDetails.validate()
+	if err != nil {
+		return apperrors.RequestBodyValidationErr{
+			Message: err.Error(),
+		}
+	}
+
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
 
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PasswordReset {
