@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/email"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/email"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -215,9 +215,10 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 		}
 	}
 
-	redactedUser := redactPassword(User(user))
+	maskedUser := User(user)
+	maskedUser.redactPassword()
 
-	return redactedUser, nil
+	return maskedUser, nil
 }
 
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {

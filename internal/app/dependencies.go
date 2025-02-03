@@ -3,9 +3,9 @@ package app
 import (
 	"database/sql"
 
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/email"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/user"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/email"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 )
 

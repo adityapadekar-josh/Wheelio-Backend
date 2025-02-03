@@ -43,8 +43,8 @@ type Email struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
-func redactPassword(user User) User {
-	user.Password = ""
+func (u *User) redactPassword() {
+	u.Password = ""
 
-	return user
+	// return u
 }
