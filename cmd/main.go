@@ -13,7 +13,6 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/api"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 )
 
 func main() {
@@ -25,7 +24,7 @@ func main() {
 		return
 	}
 
-	db, err := repository.InitDataStore(cfg)
+	db, err := config.InitDataStore(cfg)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err.Error())
 		return
