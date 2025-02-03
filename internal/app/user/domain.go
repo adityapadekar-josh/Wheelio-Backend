@@ -45,6 +45,4 @@ type Email struct {
 
 func (u *User) redactPassword() {
 	u.Password = ""
-
-	// return u
 }
