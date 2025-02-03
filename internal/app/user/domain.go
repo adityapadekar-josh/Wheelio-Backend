@@ -46,3 +46,23 @@ type Email struct {
 func (u *User) redactPassword() {
 	u.Password = ""
 }
+
+func (c CreateUserRequestBody) validate() bool {
+	if c.Name == "" {
+		return false
+	}
+
+	if c.Email == "" {
+		return false
+	}
+
+	if c.PhoneNumber == "" {
+		return false
+	}
+	
+	if c.Password == "" {
+		return false
+	}
+
+	return true
+}

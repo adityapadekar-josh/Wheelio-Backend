@@ -2,18 +2,20 @@ package constant
 
 // User Roles
 const (
-	HOST   = "HOST"
-	SEEKER = "SEEKER"
+	Host   = "HOST"
+	Seeker = "SEEKER"
 )
 
 // Verification Token Types
 const (
-	EMAIL_VERIFICATION = "EMAIL_VERIFICATION"
-	PASSWORD_RESET     = "PASSWORD_RESET"
+	EmailVerification = "EMAIL_VERIFICATION"
+	PasswordReset     = "PASSWORD_RESET"
 )
 
 // Log messages
 const (
-	FAILED_MARSHAL    = "failed to parse request body"
-	FAILED_VALIDATION = "validation failed"
+	FailedMarshal    = "failed to parse request body"
+	FailedValidation = "validation failed"
 )
+
+const ()

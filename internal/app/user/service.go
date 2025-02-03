@@ -64,7 +64,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	}
 
 	expiresAt := time.Now().Add(10 * time.Minute)
-	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, constant.EMAIL_VERIFICATION, expiresAt)
+	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, constant.EmailVerification, expiresAt)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBo
 
 func (s *service) VerifyEmail(ctx context.Context, token string) error {
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, token)
-	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.EMAIL_VERIFICATION {
+	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.EmailVerification {
 		return apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnprocessableEntity,
 			Message:    apperrors.ErrInvalidToken.Error(),
@@ -152,7 +152,7 @@ func (s *service) ForgotPassword(ctx context.Context, email string) error {
 	}
 
 	expiresAt := time.Now().Add(10 * time.Minute)
-	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, constant.PASSWORD_RESET, expiresAt)
+	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, constant.PasswordReset, expiresAt)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (s *service) ForgotPassword(ctx context.Context, email string) error {
 func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error {
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
 
-	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PASSWORD_RESET {
+	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PasswordReset {
 		return apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnprocessableEntity,
 			Message:    apperrors.ErrInvalidToken.Error(),
@@ -224,7 +224,7 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
 	userId := ctx.Value("userId").(int)
 
-	err := s.userRepository.UpdateUserRole(ctx, userId, constant.HOST)
+	err := s.userRepository.UpdateUserRole(ctx, userId, constant.Host)
 	if err != nil {
 		return err
 	}

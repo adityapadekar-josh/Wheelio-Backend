@@ -34,7 +34,7 @@ func NewRouter(deps app.Dependencies) *http.ServeMux {
 		"PATCH /api/v1/auth/host/upgrade",
 		middleware.ChainMiddleware(
 			user.UpgradeUserRoleToHost(deps.UserService),
-			middleware.AuthorizationMiddleware(constant.SEEKER),
+			middleware.AuthorizationMiddleware(constant.Seeker),
 			middleware.AuthenticationMiddleware,
 		),
 	)
