@@ -20,7 +20,7 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 	router.HandleFunc("POST /api/v1/auth/signin", user.SignInUser(deps.UserService))
 	router.HandleFunc("POST /api/v1/auth/email/verify", user.VerifyEmail(deps.UserService))
 	router.HandleFunc("POST /api/v1/auth/password/forgot", user.ForgotPassword(deps.UserService))
-	router.HandleFunc("POST /api/v1/auth/password/reset", user.ResetPassword(deps.UserService))
+	router.HandleFunc("PATCH /api/v1/auth/password/reset", user.ResetPassword(deps.UserService))
 	router.HandleFunc(
 		"GET /api/v1/auth/user",
 		middleware.ChainMiddleware(
