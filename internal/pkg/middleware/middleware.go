@@ -76,7 +76,7 @@ func AuthorizationMiddleware(allowedRoles ...string) Middleware {
 			}
 
 			if !authorized {
-				response.WriteJson(w, http.StatusUnauthorized, apperrors.ErrAccessForbidden.Error(), nil)
+				response.WriteJson(w, http.StatusForbidden, apperrors.ErrAccessForbidden.Error(), nil)
 				return
 			}
 
