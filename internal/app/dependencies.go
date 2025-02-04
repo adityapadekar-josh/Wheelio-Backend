@@ -13,10 +13,9 @@ type Dependencies struct {
 }
 
 func NewServices(db *sql.DB) Dependencies {
-	emailService := email.NewService()
-
 	userRepository := repository.NewUserRepository(db)
 
+	emailService := email.NewService()
 	userService := user.NewService(userRepository, emailService)
 
 	return Dependencies{

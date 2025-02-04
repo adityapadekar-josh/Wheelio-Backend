@@ -17,13 +17,12 @@ func SignUpUser(userService Service) http.HandlerFunc {
 		var requestBody CreateUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(constant.FailedMarshal, "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		err = userService.RegisterUser(ctx, requestBody, constant.Seeker)
-
 		if err != nil {
 			slog.Error("failed to register new user", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)
@@ -42,7 +41,7 @@ func SignInUser(userService Service) http.HandlerFunc {
 		var requestBody LoginUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(constant.FailedMarshal, "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
@@ -66,7 +65,7 @@ func VerifyEmail(userService Service) http.HandlerFunc {
 		var requestBody Token
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(constant.FailedMarshal, "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
@@ -90,7 +89,7 @@ func ForgotPassword(userService Service) http.HandlerFunc {
 		var requestBody Email
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(constant.FailedMarshal, "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
@@ -114,7 +113,7 @@ func ResetPassword(userService Service) http.HandlerFunc {
 		var requestBody ResetPasswordRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(constant.FailedMarshal, "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
@@ -154,13 +153,12 @@ func HostSignUpUser(userService Service) http.HandlerFunc {
 		var requestBody CreateUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(constant.FailedMarshal, "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		err = userService.RegisterUser(ctx, requestBody, constant.Host)
-
 		if err != nil {
 			slog.Error("failed to register new host", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)

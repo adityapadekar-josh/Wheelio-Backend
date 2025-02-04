@@ -22,6 +22,11 @@ func ChainMiddleware(h http.HandlerFunc, m ...Middleware) http.HandlerFunc {
 	return wrapped
 }
 
+type RequestContextKey string
+
+var RequestContextUserIdKey RequestContextKey = "userId"
+var RequestContextRoleKey RequestContextKey = "role"
+
 func AuthenticationMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		bearerToken := r.Header.Get("Authorization")
@@ -33,9 +38,8 @@ func AuthenticationMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		token := strings.Split(bearerToken, " ")[1]
 		data, err := cryptokit.VerifyJWTToken(token)
-
 		if err != nil {
-			response.WriteJson(w, http.StatusUnauthorized, apperrors.ErrUnauthorizedAccess.Error(), nil)
+			response.WriteJson(w, http.StatusUnauthorized, err.Error(), nil)
 			return
 		}
 
@@ -51,8 +55,8 @@ func AuthenticationMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "userId", int(userId))
-		ctx = context.WithValue(ctx, "role", role)
+		ctx := context.WithValue(r.Context(), RequestContextUserIdKey, int(userId))
+		ctx = context.WithValue(ctx, RequestContextRoleKey, role)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
@@ -64,7 +68,7 @@ func AuthorizationMiddleware(allowedRoles ...string) Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			role := ctx.Value("role").(string)
+			role := ctx.Value(RequestContextRoleKey).(string)
 
 			authorized := false
 

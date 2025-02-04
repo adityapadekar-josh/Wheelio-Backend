@@ -104,7 +104,6 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (Use
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-
 	if err != nil {
 		return User{}, err
 	}
@@ -116,7 +115,6 @@ func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, use
 	sqlStatement := "UPDATE users SET is_verified=true WHERE id=$1"
 
 	_, err := ur.DB.ExecContext(ctx, sqlStatement, userId)
-
 	if err != nil {
 		return err
 	}
@@ -128,7 +126,6 @@ func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, pa
 	sqlStatement := "UPDATE users SET password=$1 WHERE id=$2"
 
 	_, err := ur.DB.ExecContext(ctx, sqlStatement, password, userId)
-
 	if err != nil {
 		return err
 	}
@@ -140,7 +137,6 @@ func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role s
 	sqlStatement := "UPDATE users SET role=$1 WHERE id=$2"
 
 	_, err := ur.DB.ExecContext(ctx, sqlStatement, role, userId)
-
 	if err != nil {
 		return err
 	}
@@ -169,7 +165,6 @@ func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId in
 		&verificationToken.Type,
 		&verificationToken.ExpiresAt,
 	)
-
 	if err != nil {
 		return verificationToken, err
 	}
@@ -192,7 +187,6 @@ func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token
 		&verificationToken.Type,
 		&verificationToken.ExpiresAt,
 	)
-
 	if err != nil {
 		return verificationToken, err
 	}
@@ -204,7 +198,6 @@ func (ur *userRepository) DeleteVerificationTokenById(ctx context.Context, token
 	sqlStatement := "DELETE FROM verification_tokens WHERE id=$1"
 
 	_, err := ur.DB.ExecContext(ctx, sqlStatement, tokenId)
-
 	if err != nil {
 		return err
 	}

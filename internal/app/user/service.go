@@ -2,6 +2,8 @@ package user
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -45,7 +48,6 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	}
 
 	_, err = s.userRepository.GetUserByEmail(ctx, userDetails.Email)
-
 	if err == nil {
 		return apperrors.CustomHTTPErr{
 			StatusCode: http.StatusBadRequest,
@@ -169,7 +171,6 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	}
 
 	user, err := s.userRepository.GetUserByEmail(ctx, email.Email)
-
 	if err != nil {
 		return nil
 	}
@@ -208,7 +209,6 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 	}
 
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
-
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PasswordReset {
 		return apperrors.CustomHTTPErr{
 			StatusCode: http.StatusUnprocessableEntity,
@@ -244,10 +244,13 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 
 	user, err := s.userRepository.GetUserById(ctx, userId)
 	if err != nil {
-		return User{}, apperrors.CustomHTTPErr{
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    apperrors.ErrUserNotFound.Error(),
+		if errors.Is(err, sql.ErrNoRows) {
+			return User{}, apperrors.CustomHTTPErr{
+				StatusCode: http.StatusBadRequest,
+				Message:    apperrors.ErrUserNotFound.Error(),
+			}
 		}
+		return User{}, err
 	}
 
 	maskedUser := User(user)
@@ -257,7 +260,7 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 }
 
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
-	userId := ctx.Value("userId").(int)
+	userId := ctx.Value(middleware.RequestContextUserIdKey).(int)
 
 	err := s.userRepository.UpdateUserRole(ctx, userId, constant.Host)
 	if err != nil {

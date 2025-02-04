@@ -20,9 +20,9 @@ func WriteJson(w http.ResponseWriter, statusCode int, message string, data inter
 		Data:    data,
 	}
 
-	marshaledResponse, err := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json")
 
+	marshaledResponse, err := json.Marshal(response)
 	if err != nil {
 		slog.Error("failed to marshal response", "error", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

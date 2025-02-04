@@ -3,9 +3,9 @@ package cryptokit
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -58,14 +58,13 @@ func VerifyJWTToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return JWTSecret, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return nil, fmt.Errorf("invalid token")
+		return nil, apperrors.ErrUnauthorizedAccess
 	}
 
 	return claims, nil

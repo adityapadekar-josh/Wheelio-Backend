@@ -29,7 +29,6 @@ func (s *service) SendEmail(toName, toEmail, subject, plainTextContent string) e
 	client := sendgrid.NewSendClient(s.APIKey)
 
 	_, err := client.Send(message)
-
 	if err != nil {
 		return err
 	}

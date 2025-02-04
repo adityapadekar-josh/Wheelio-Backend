@@ -10,6 +10,7 @@ var (
 	ErrInternalServer     = errors.New("an unexpected error occurred. please try again later")
 	ErrUnauthorizedAccess = errors.New("unauthorized. please provide a valid access token")
 	ErrAccessForbidden    = errors.New("access forbidden")
+	ErrFailedMarshal      = errors.New("failed to parse request body")
 	ErrInvalidToken       = errors.New("invalid or expired token")
 	ErrUserNotFound       = errors.New("user not found")
 )
