@@ -9,6 +9,11 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 )
 
+type Response struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
 func WriteJson(w http.ResponseWriter, statusCode int, message string, data interface{}) {
 	response := Response{
 		Message: message,

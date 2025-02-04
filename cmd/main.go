@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/api"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 )
@@ -31,7 +30,7 @@ func main() {
 
 	services := app.NewServices(db, cfg)
 
-	router := api.NewRouter(services)
+	router := app.NewRouter(services)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.HTTPServer.Port),

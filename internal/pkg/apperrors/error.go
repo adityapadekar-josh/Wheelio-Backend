@@ -2,6 +2,7 @@ package apperrors
 
 import (
 	"errors"
+	"net/http"
 )
 
 var (
@@ -28,4 +29,15 @@ type RequestBodyValidationErr struct {
 
 func (r RequestBodyValidationErr) Error() string {
 	return r.Message
+}
+
+func MapError(err error) (statusCode int, errMessage string) {
+	switch e := err.(type) {
+	case CustomHTTPErr:
+		return e.StatusCode, e.Error()
+	case RequestBodyValidationErr:
+		return http.StatusBadRequest, ErrInvalidRequestBody.Error()
+	default:
+		return http.StatusInternalServerError, ErrInternalServer.Error()
+	}
 }
