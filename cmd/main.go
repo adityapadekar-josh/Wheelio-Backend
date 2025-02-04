@@ -28,7 +28,7 @@ func main() {
 	}
 	defer db.Close()
 
-	services := app.NewServices(db, cfg)
+	services := app.NewServices(db)
 
 	router := app.NewRouter(services)
 

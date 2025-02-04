@@ -29,7 +29,10 @@ type Config struct {
 	HTTPServer   HTTPServer   `yaml:"http_server"`
 	Database     Database     `yaml:"database"`
 	EmailService EmailService `yaml:"email_service"`
+	JWTSecret    string       `yaml:"jwt_secret"`
 }
+
+var cfg Config
 
 func MustLoad() (Config, error) {
 	configPath := os.Getenv("CONFIG_PATH")
@@ -42,11 +45,13 @@ func MustLoad() (Config, error) {
 		return Config{}, errors.New("no config file provided")
 	}
 
-	var cfg Config
-
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		return Config{}, err
 	}
 
 	return cfg, nil
+}
+
+func GetConfig() Config {
+	return cfg
 }

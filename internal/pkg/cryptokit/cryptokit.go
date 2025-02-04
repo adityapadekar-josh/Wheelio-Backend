@@ -5,11 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var JWTSecret = []byte("1jHdu8h487SQIjFFh/lFRPvqOdFTmprtcjx/uQaCxLU=")
 
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -37,7 +36,12 @@ func GenerateSecureToken(length int) (string, error) {
 func CreateJWTToken(data jwt.MapClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, data)
 
-	tokenString, err := token.SignedString(JWTSecret)
+	var JWTSecret = []byte(config.GetConfig().JWTSecret)
+	if len(JWTSecret) == 0 {
+		JWTSecret = []byte("MyTempSecret")
+	}
+
+	tokenString, err := token.SignedString([]byte(JWTSecret))
 	if err != nil {
 		return "", err
 	}
@@ -46,9 +50,15 @@ func CreateJWTToken(data jwt.MapClaims) (string, error) {
 }
 
 func VerifyJWTToken(tokenString string) (jwt.MapClaims, error) {
+	var JWTSecret = []byte(config.GetConfig().JWTSecret)
+	if len(JWTSecret) == 0 {
+		JWTSecret = []byte("MyTempSecret")
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return JWTSecret, nil
 	})
+
 	if err != nil {
 		return nil, err
 	}

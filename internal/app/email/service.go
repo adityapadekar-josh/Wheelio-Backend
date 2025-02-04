@@ -1,6 +1,7 @@
 package email
 
 import (
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
@@ -15,8 +16,9 @@ type Service interface {
 	SendEmail(toName, toEmail, subject, plainTextContent string) error
 }
 
-func NewService(apiKey, fromName, fromEmail string) Service {
-	return &service{APIKey: apiKey, FromName: fromName, FromEmail: fromEmail}
+func NewService() Service {
+	cfg := config.GetConfig()
+	return &service{APIKey: cfg.EmailService.ApiKey, FromName: cfg.EmailService.FromName, FromEmail: cfg.EmailService.FromEmail}
 }
 
 func (s *service) SendEmail(toName, toEmail, subject, plainTextContent string) error {
