@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/email"
@@ -49,10 +48,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 
 	_, err = s.userRepository.GetUserByEmail(ctx, userDetails.Email)
 	if err == nil {
-		return apperrors.CustomHTTPErr{
-			StatusCode: http.StatusBadRequest,
-			Message:    fmt.Sprintf("email is already registered: %s", userDetails.Email),
-		}
+		return apperrors.ErrEmailAlreadyRegistered
 	}
 
 	hashedPassword, err := cryptokit.HashPassword(userDetails.Password)
@@ -102,25 +98,16 @@ func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBo
 
 	user, err := s.userRepository.GetUserByEmail(ctx, loginDetails.Email)
 	if err != nil {
-		return AccessToken{}, apperrors.CustomHTTPErr{
-			StatusCode: http.StatusUnauthorized,
-			Message:    "invalid email or password",
-		}
+		return AccessToken{}, apperrors.ErrInvalidLoginCredentials
 	}
 
 	if !user.IsVerified {
-		return AccessToken{}, apperrors.CustomHTTPErr{
-			StatusCode: http.StatusConflict,
-			Message:    "user account is not verified. please check your email",
-		}
+		return AccessToken{}, apperrors.ErrUserNotVerified
 	}
 
 	isPasswordCorrect := cryptokit.CheckPasswordHash(loginDetails.Password, user.Password)
 	if !isPasswordCorrect {
-		return AccessToken{}, apperrors.CustomHTTPErr{
-			StatusCode: http.StatusUnauthorized,
-			Message:    "invalid email or password",
-		}
+		return AccessToken{}, apperrors.ErrInvalidLoginCredentials
 	}
 
 	token, err := cryptokit.CreateJWTToken(jwt.MapClaims{
@@ -146,10 +133,7 @@ func (s *service) VerifyEmail(ctx context.Context, token Token) error {
 
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, token.Token)
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.EmailVerification {
-		return apperrors.CustomHTTPErr{
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    apperrors.ErrInvalidToken.Error(),
-		}
+		return apperrors.ErrInvalidToken
 	}
 
 	err = s.userRepository.UpdateUserEmailVerifiedStatus(ctx, verificationToken.UserId)
@@ -210,18 +194,12 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PasswordReset {
-		return apperrors.CustomHTTPErr{
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    apperrors.ErrInvalidToken.Error(),
-		}
+		return apperrors.ErrInvalidToken
 	}
 
 	_, err = s.userRepository.GetUserById(ctx, verificationToken.UserId)
 	if err != nil {
-		return apperrors.CustomHTTPErr{
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    apperrors.ErrInvalidToken.Error(),
-		}
+		return apperrors.ErrInvalidToken
 	}
 
 	hashedPassword, err := cryptokit.HashPassword(resetPasswordDetails.Password)
@@ -245,10 +223,7 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 	user, err := s.userRepository.GetUserById(ctx, userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return User{}, apperrors.CustomHTTPErr{
-				StatusCode: http.StatusBadRequest,
-				Message:    apperrors.ErrUserNotFound.Error(),
-			}
+			return User{}, apperrors.ErrUserNotFound
 		}
 		return User{}, err
 	}
