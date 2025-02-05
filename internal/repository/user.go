@@ -26,16 +26,37 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{DB: db}
 }
 
-func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserRequestBody, role string) (User, error) {
-	sqlStatement := `
+const (
+	createUserQuery = `
 	INSERT INTO users (name, email, phone_number, password, role)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING *`
 
+	getUserByIdQuery = "SELECT * FROM users WHERE id=$1"
+
+	getUserByEmailQuery = "SELECT * FROM users WHERE email=$1"
+
+	updateUserEmailVerifiedStatusQuery = "UPDATE users SET is_verified=true WHERE id=$1"
+
+	updateUserPasswordQuery = "UPDATE users SET password=$1 WHERE id=$2"
+
+	updateUserRoleQuery = "UPDATE users SET role=$1 WHERE id=$2"
+
+	createVerificationTokenQuery = `
+	INSERT INTO verification_tokens (user_id, token, type, expires_at)
+	VALUES ($1, $2, $3, $4)
+	RETURNING *`
+
+	getVerificationTokenByTokenQuery = "SELECT * FROM verification_tokens WHERE token=$1"
+
+	deleteVerificationTokenByIdQuery = "DELETE FROM verification_tokens WHERE id=$1"
+)
+
+func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserRequestBody, role string) (User, error) {
 	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
-		sqlStatement,
+		createUserQuery,
 		userData.Name,
 		userData.Email,
 		userData.PhoneNumber,
@@ -60,12 +81,10 @@ func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserReq
 }
 
 func (ur *userRepository) GetUserById(ctx context.Context, userId int) (User, error) {
-	sqlStatement := "SELECT * FROM users WHERE id=$1"
-
 	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
-		sqlStatement,
+		getUserByIdQuery,
 		userId,
 	).Scan(
 		&user.Id,
@@ -86,12 +105,10 @@ func (ur *userRepository) GetUserById(ctx context.Context, userId int) (User, er
 }
 
 func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	sqlStatement := "SELECT * FROM users WHERE email=$1"
-
 	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
-		sqlStatement,
+		getUserByEmailQuery,
 		email,
 	).Scan(
 		&user.Id,
@@ -112,9 +129,7 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (Use
 }
 
 func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, userId int) error {
-	sqlStatement := "UPDATE users SET is_verified=true WHERE id=$1"
-
-	_, err := ur.DB.ExecContext(ctx, sqlStatement, userId)
+	_, err := ur.DB.ExecContext(ctx, updateUserEmailVerifiedStatusQuery, userId)
 	if err != nil {
 		return err
 	}
@@ -123,9 +138,7 @@ func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, use
 }
 
 func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, password string) error {
-	sqlStatement := "UPDATE users SET password=$1 WHERE id=$2"
-
-	_, err := ur.DB.ExecContext(ctx, sqlStatement, password, userId)
+	_, err := ur.DB.ExecContext(ctx, updateUserPasswordQuery, password, userId)
 	if err != nil {
 		return err
 	}
@@ -134,9 +147,7 @@ func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, pa
 }
 
 func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role string) error {
-	sqlStatement := "UPDATE users SET role=$1 WHERE id=$2"
-
-	_, err := ur.DB.ExecContext(ctx, sqlStatement, role, userId)
+	_, err := ur.DB.ExecContext(ctx, updateUserRoleQuery, role, userId)
 	if err != nil {
 		return err
 	}
@@ -145,15 +156,10 @@ func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role s
 }
 
 func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error) {
-	sqlStatement := `
-	INSERT INTO verification_tokens (user_id, token, type, expires_at)
-	VALUES ($1, $2, $3, $4)
-	RETURNING *`
-
 	var verificationToken VerificationToken
 	err := ur.DB.QueryRowContext(
 		ctx,
-		sqlStatement,
+		createVerificationTokenQuery,
 		userId,
 		token,
 		tokenType,
@@ -173,12 +179,10 @@ func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId in
 }
 
 func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token string) (VerificationToken, error) {
-	sqlStatement := "SELECT * FROM verification_tokens WHERE token=$1"
-
 	var verificationToken VerificationToken
 	err := ur.DB.QueryRowContext(
 		ctx,
-		sqlStatement,
+		getVerificationTokenByTokenQuery,
 		token,
 	).Scan(
 		&verificationToken.Id,
@@ -195,9 +199,7 @@ func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token
 }
 
 func (ur *userRepository) DeleteVerificationTokenById(ctx context.Context, tokenId int) error {
-	sqlStatement := "DELETE FROM verification_tokens WHERE id=$1"
-
-	_, err := ur.DB.ExecContext(ctx, sqlStatement, tokenId)
+	_, err := ur.DB.ExecContext(ctx, deleteVerificationTokenByIdQuery, tokenId)
 	if err != nil {
 		return err
 	}
