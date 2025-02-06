@@ -19,6 +19,7 @@ type CreateUserRequestBody struct {
 	Email       string
 	PhoneNumber string
 	Password    string
+	Role        string
 }
 
 type VerificationToken struct {

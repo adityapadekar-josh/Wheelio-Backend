@@ -4,13 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
-
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 )
-
-var cfg = config.GetConfig()
 
 const (
 	Host   = "HOST"
@@ -54,6 +51,7 @@ type CreateUserRequestBody struct {
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phoneNumber"`
 	Password    string `json:"password"`
+	Role        string `json:"role"`
 }
 
 type LoginUserRequestBody struct {
@@ -99,6 +97,15 @@ func (c CreateUserRequestBody) validate() error {
 
 	if strings.TrimSpace(c.Password) == "" {
 		validationErrors = append(validationErrors, "password is required")
+	}
+
+	if strings.TrimSpace(c.Role) == "" {
+		validationErrors = append(validationErrors, "role is required")
+	} else {
+		roles := []string{Host, Seeker}
+		if !slices.Contains(roles, c.Role) {
+			validationErrors = append(validationErrors, "invalid role")
+		}
 	}
 
 	if len(validationErrors) > 0 {

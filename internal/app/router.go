@@ -27,7 +27,6 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 			middleware.AuthenticationMiddleware,
 		),
 	)
-	router.HandleFunc("POST /api/v1/auth/host/singup", user.HostSignUpUser(deps.UserService))
 	router.HandleFunc(
 		"PATCH /api/v1/auth/host/upgrade",
 		middleware.ChainMiddleware(

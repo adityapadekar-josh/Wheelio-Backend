@@ -21,7 +21,7 @@ func SignUpUser(userService Service) http.HandlerFunc {
 			return
 		}
 
-		err = userService.RegisterUser(ctx, requestBody, Seeker)
+		err = userService.RegisterUser(ctx, requestBody)
 		if err != nil {
 			slog.Error("failed to register new user", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)
@@ -142,30 +142,6 @@ func GetLoggedInUser(userService Service) http.HandlerFunc {
 		}
 
 		response.WriteJson(w, http.StatusOK, "user details fetched successfully", user)
-	}
-}
-
-func HostSignUpUser(userService Service) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		var requestBody CreateUserRequestBody
-		err := json.NewDecoder(r.Body).Decode(&requestBody)
-		if err != nil {
-			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
-			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
-			return
-		}
-
-		err = userService.RegisterUser(ctx, requestBody, Host)
-		if err != nil {
-			slog.Error("failed to register new host", "error", err.Error())
-			status, errorMessage := apperrors.MapError(err)
-			response.WriteJson(w, status, errorMessage, nil)
-			return
-		}
-
-		response.WriteJson(w, http.StatusOK, "user registered successfully. please check your email to verify your account.", nil)
 	}
 }
 

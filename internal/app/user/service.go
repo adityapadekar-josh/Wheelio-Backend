@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/email"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
@@ -21,7 +22,7 @@ type service struct {
 }
 
 type Service interface {
-	RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error
+	RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) error
 	LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error)
 	VerifyEmail(ctx context.Context, token Token) error
 	ForgotPassword(ctx context.Context, email Email) error
@@ -37,7 +38,7 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 	}
 }
 
-func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error {
+func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) error {
 	err := userDetails.validate()
 	if err != nil {
 		return apperrors.RequestBodyValidationErr{
@@ -57,7 +58,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 
 	userDetails.Password = hashedPassword
 
-	newUser, err := s.userRepository.CreateUser(ctx, repository.CreateUserRequestBody(userDetails), role)
+	newUser, err := s.userRepository.CreateUser(ctx, repository.CreateUserRequestBody(userDetails))
 	if err != nil {
 		return err
 	}
@@ -73,6 +74,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 		return err
 	}
 
+	cfg := config.GetConfig()
 	verificationLink := fmt.Sprintf("%s/verify-email?token=%s", cfg.ClientURL, token)
 	emailBody := fmt.Sprintf(emailVerificationEmailContent, newUser.Name, verificationLink)
 
@@ -166,6 +168,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 		return err
 	}
 
+	cfg := config.GetConfig()
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", cfg.ClientURL, token)
 	emailBody := fmt.Sprintf(resetPasswordEmailContent, user.Name, resetLink)
 

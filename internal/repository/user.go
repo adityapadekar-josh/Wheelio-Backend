@@ -13,7 +13,7 @@ type userRepository struct {
 type UserRepository interface {
 	GetUserById(ctx context.Context, userId int) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
-	CreateUser(ctx context.Context, userData CreateUserRequestBody, role string) (User, error)
+	CreateUser(ctx context.Context, userData CreateUserRequestBody) (User, error)
 	UpdateUserEmailVerifiedStatus(ctx context.Context, userId int) error
 	CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error)
 	GetVerificationTokenByToken(ctx context.Context, token string) (VerificationToken, error)
@@ -52,7 +52,7 @@ const (
 	deleteVerificationTokenByIdQuery = "DELETE FROM verification_tokens WHERE id=$1"
 )
 
-func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserRequestBody, role string) (User, error) {
+func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserRequestBody) (User, error) {
 	var user User
 	err := ur.DB.QueryRowContext(
 		ctx,
@@ -61,7 +61,7 @@ func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserReq
 		userData.Email,
 		userData.PhoneNumber,
 		userData.Password,
-		role,
+		userData.Role,
 	).Scan(
 		&user.Id,
 		&user.Name,
