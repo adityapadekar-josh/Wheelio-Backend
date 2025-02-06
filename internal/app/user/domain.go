@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 )
 
 const (
@@ -21,6 +23,18 @@ const (
 const (
 	EmailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	PhoneRegex = `^(?:(?:\+91)|91)?[0-9]{10}$`
+)
+
+var cfg = config.GetConfig()
+
+const (
+	accessTokenTTL       = time.Hour * 24 * 30
+	verificationTokenTTL = time.Minute * 10
+)
+
+const (
+	emailVerificationEmailContent = "Hello %s,\n\nThank you for registering on Wheelio. Please verify your email address by clicking the link below:\n\n%s\n\nThis link will expire in 10 minutes.\n\nBest regards,\nThe Wheelio Team"
+	resetPasswordEmailContent     = "Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team"
 )
 
 type User struct {
