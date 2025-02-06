@@ -238,10 +238,7 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 		return User{}, err
 	}
 
-	maskedUser := User(user)
-	maskedUser.redactPassword()
-
-	return maskedUser, nil
+	return User(user), nil
 }
 
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {

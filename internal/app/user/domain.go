@@ -28,7 +28,7 @@ type User struct {
 	Name        string    `json:"name"`
 	Email       string    `json:"email"`
 	PhoneNumber string    `json:"phoneNumber"`
-	Password    string    `json:"password,omitempty"`
+	Password    string    `json:"-"`
 	Role        string    `json:"role"`
 	IsVerified  bool      `json:"is_verified"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -62,10 +62,6 @@ type Token struct {
 
 type Email struct {
 	Email string `json:"email"`
-}
-
-func (u *User) redactPassword() {
-	u.Password = ""
 }
 
 func (c CreateUserRequestBody) validate() error {
