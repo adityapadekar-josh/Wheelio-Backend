@@ -220,10 +220,10 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 }
 
 func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
-	userId, ok := ctx.Value("userId").(int)
+	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
 
 	if !ok {
-		fmt.Println("hii")
+		return User{}, apperrors.ErrInternalServer
 	}
 
 	user, err := s.userRepository.GetUserById(ctx, userId)
@@ -241,7 +241,11 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 }
 
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
-	userId := ctx.Value(middleware.RequestContextUserIdKey).(int)
+	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
+
+	if !ok {
+		return apperrors.ErrInternalServer
+	}
 
 	err := s.userRepository.UpdateUserRole(ctx, userId, Host)
 	if err != nil {
