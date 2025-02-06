@@ -41,6 +41,11 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 var cfg = config.GetConfig()
 
 const (
+	accessTokenTTL       = time.Hour * 24 * 30
+	verificationTokenTTL = time.Minute * 10
+)
+
+const (
 	emailVerificationEmailContent = "Hello %s,\n\nThank you for registering on Wheelio. Please verify your email address by clicking the link below:\n\n%s\n\nThis link will expire in 10 minutes.\n\nBest regards,\nThe Wheelio Team"
 	resetPasswordEmailContent     = "Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team"
 )
@@ -75,7 +80,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 		return err
 	}
 
-	expiresAt := time.Now().Add(10 * time.Minute)
+	expiresAt := time.Now().Add(verificationTokenTTL)
 	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, EmailVerification, expiresAt)
 	if err != nil {
 		return err
@@ -118,7 +123,7 @@ func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBo
 		"id":    user.Id,
 		"email": user.Email,
 		"role":  user.Role,
-		"exp":   time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"exp":   time.Now().Add(accessTokenTTL).Unix(),
 	})
 	if err != nil {
 		return AccessToken{}, err
@@ -168,7 +173,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 		return err
 	}
 
-	expiresAt := time.Now().Add(10 * time.Minute)
+	expiresAt := time.Now().Add(verificationTokenTTL)
 	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, PasswordReset, expiresAt)
 	if err != nil {
 		return err
