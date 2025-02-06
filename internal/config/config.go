@@ -8,21 +8,32 @@ import (
 )
 
 type HTTPServer struct {
-	Port string `yaml:"port"`
+	Port string `yaml:"port" env:"HTTP_PORT" required:"true"`
 }
 
 type Database struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Name   string `yaml:"name"`
+	Host     string `yaml:"host" required:"true"`
+	Port     int    `yaml:"port" required:"true"`
+	User     string `yaml:"user" required:"true"`
+	Password string `yaml:"password" required:"true"`
+	Name     string `yaml:"name" required:"true"`
+}
+
+type EmailService struct {
+	ApiKey    string `yaml:"api_key" required:"true"`
+	FromName  string `yaml:"from_name" required:"true"`
+	FromEmail string `yaml:"from_email" required:"true"`
 }
 
 type Config struct {
-	HTTPServer HTTPServer `yaml:"http_server"`
-	Database Database `yaml:"database"`
+	HTTPServer   HTTPServer   `yaml:"http_server"`
+	Database     Database     `yaml:"database"`
+	EmailService EmailService `yaml:"email_service"`
+	JWTSecret    string       `yaml:"jwt_secret"`
+	ClientURL    string       `yaml:"client_url"`
 }
+
+var cfg Config
 
 func MustLoad() (Config, error) {
 	configPath := os.Getenv("CONFIG_PATH")
@@ -35,11 +46,13 @@ func MustLoad() (Config, error) {
 		return Config{}, errors.New("no config file provided")
 	}
 
-	var cfg Config
-
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		return Config{}, err
 	}
 
 	return cfg, nil
+}
+
+func GetConfig() Config {
+	return cfg
 }
