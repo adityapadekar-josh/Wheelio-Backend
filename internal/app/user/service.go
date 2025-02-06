@@ -46,12 +46,6 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 		return apperrors.ErrInvalidRequestBody
 	}
 
-	// _, err = s.userRepository.GetUserByEmail(ctx, userDetails.Email)
-	// if err == nil {
-	// 	slog.Error("attempted to register with an email that is already in use")
-	// 	return apperrors.ErrEmailAlreadyRegistered
-	// }
-
 	hashedPassword, err := cryptokit.HashPassword(userDetails.Password)
 	if err != nil {
 		slog.Error("password hashing failed", "error", err)
