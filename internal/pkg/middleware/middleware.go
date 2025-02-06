@@ -12,6 +12,11 @@ import (
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
+type RequestContextKey string
+
+var RequestContextUserIdKey RequestContextKey = "userId"
+var RequestContextRoleKey RequestContextKey = "role"
+
 func ChainMiddleware(h http.HandlerFunc, m ...Middleware) http.HandlerFunc {
 	wrapped := h
 
@@ -21,11 +26,6 @@ func ChainMiddleware(h http.HandlerFunc, m ...Middleware) http.HandlerFunc {
 
 	return wrapped
 }
-
-type RequestContextKey string
-
-var RequestContextUserIdKey RequestContextKey = "userId"
-var RequestContextRoleKey RequestContextKey = "role"
 
 func AuthenticationMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

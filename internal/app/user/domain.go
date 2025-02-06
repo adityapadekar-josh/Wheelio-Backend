@@ -10,6 +10,8 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 )
 
+var cfg = config.GetConfig()
+
 const (
 	Host   = "HOST"
 	Seeker = "SEEKER"
@@ -24,8 +26,6 @@ const (
 	EmailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	PhoneRegex = `^(?:(?:\+91)|91)?[0-9]{10}$`
 )
-
-var cfg = config.GetConfig()
 
 const (
 	accessTokenTTL       = time.Hour * 24 * 30
