@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/email"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
@@ -37,6 +38,8 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 		emailService:   emailService,
 	}
 }
+
+var cfg = config.GetConfig()
 
 func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error {
 	err := userDetails.validate()
@@ -74,7 +77,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 		return err
 	}
 
-	verificationLink := fmt.Sprintf("http://localhost:3000/verify-email?token=%s", token)
+	verificationLink := fmt.Sprintf("%s/verify-email?token=%s", cfg.ClientURL, token)
 	emailBody := fmt.Sprintf(
 		"Hello %s,\n\nThank you for registering on Wheelio. Please verify your email address by clicking the link below:\n\n%s\n\nThis link will expire in 10 minutes.\n\nBest regards,\nThe Wheelio Team",
 		newUser.Name, verificationLink,
@@ -170,7 +173,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 		return err
 	}
 
-	resetLink := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", token)
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", cfg.ClientURL, token)
 	emailBody := fmt.Sprintf(
 		"Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team",
 		user.Name, resetLink,

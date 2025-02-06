@@ -30,6 +30,7 @@ type Config struct {
 	Database     Database     `yaml:"database"`
 	EmailService EmailService `yaml:"email_service"`
 	JWTSecret    string       `yaml:"jwt_secret"`
+	ClientURL    string       `yaml:"client_url"`
 }
 
 var cfg Config
