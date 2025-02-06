@@ -1,7 +1,10 @@
 package email
 
 import (
+	"log/slog"
+
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
@@ -30,7 +33,8 @@ func (s *service) SendEmail(toName, toEmail, subject, plainTextContent string) e
 
 	_, err := client.Send(message)
 	if err != nil {
-		return err
+		slog.Error("failed to send email", "error", err)
+		return apperrors.ErrEmailSendFailed
 	}
 
 	return nil

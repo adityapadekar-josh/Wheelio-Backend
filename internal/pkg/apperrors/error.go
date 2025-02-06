@@ -18,29 +18,26 @@ var (
 	ErrEmailAlreadyRegistered  = errors.New("email is already registered")
 	ErrInvalidLoginCredentials = errors.New("invalid email or password")
 	ErrUserNotVerified         = errors.New("user account is not verified. please check your email")
+	ErrUserCreationFailed      = errors.New("failed to create user")
+
+	ErrJWTCreationFailed   = errors.New("failed to create jwt token")
+	ErrTokenCreationFailed = errors.New("failed to create verification token")
+
+	ErrEmailSendFailed = errors.New("failed to send email")
 )
 
-type RequestBodyValidationErr struct {
-	Message string
-}
-
-func (r RequestBodyValidationErr) Error() string {
-	return r.Message
-}
-
 func MapError(err error) (statusCode int, errMessage string) {
-	switch err.(type) {
-	case RequestBodyValidationErr:
-		return http.StatusBadRequest, ErrInvalidRequestBody.Error()
-	}
-
 	switch err {
-	case ErrEmailAlreadyRegistered:
+	case ErrEmailAlreadyRegistered, ErrInvalidRequestBody:
 		return http.StatusBadRequest, err.Error()
+	case ErrInvalidLoginCredentials, ErrUnauthorizedAccess:
+		return http.StatusUnauthorized, err.Error()
+	case ErrAccessForbidden:
+		return http.StatusForbidden, err.Error()
+	case ErrUserNotFound:
+		return http.StatusNotFound, err.Error()
 	case ErrUserNotVerified:
 		return http.StatusConflict, err.Error()
-	case ErrInvalidLoginCredentials:
-		return http.StatusUnauthorized, err.Error()
 	case ErrInvalidToken:
 		return http.StatusUnprocessableEntity, err.Error()
 	default:

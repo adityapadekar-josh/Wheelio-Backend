@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -32,6 +33,7 @@ func AuthenticationMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		bearerToken := r.Header.Get("Authorization")
 
 		if bearerToken == "" {
+			slog.Error("no authentication token provided in request")
 			response.WriteJson(w, http.StatusUnauthorized, apperrors.ErrUnauthorizedAccess.Error(), nil)
 			return
 		}
@@ -39,18 +41,21 @@ func AuthenticationMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		token := strings.Split(bearerToken, " ")[1]
 		data, err := cryptokit.VerifyJWTToken(token)
 		if err != nil {
+			slog.Error("invalid or expired jwt token", "error", err)
 			response.WriteJson(w, http.StatusUnauthorized, err.Error(), nil)
 			return
 		}
 
 		userId, ok := data["id"].(float64)
 		if !ok {
+			slog.Error("user id missing or invalid in token", "token", token)
 			response.WriteJson(w, http.StatusUnauthorized, apperrors.ErrUnauthorizedAccess.Error(), nil)
 			return
 		}
 
 		role, ok := data["role"].(string)
 		if !ok {
+			slog.Error("role missing or invalid in token", "token", token)
 			response.WriteJson(w, http.StatusUnauthorized, apperrors.ErrUnauthorizedAccess.Error(), nil)
 			return
 		}
@@ -68,7 +73,12 @@ func AuthorizationMiddleware(allowedRoles ...string) Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			role := ctx.Value(RequestContextRoleKey).(string)
+			role, ok := ctx.Value(RequestContextRoleKey).(string)
+			if !ok {
+				slog.Error("role missing in context")
+				response.WriteJson(w, http.StatusForbidden, apperrors.ErrAccessForbidden.Error(), nil)
+				return
+			}
 
 			authorized := false
 
@@ -80,6 +90,7 @@ func AuthorizationMiddleware(allowedRoles ...string) Middleware {
 			}
 
 			if !authorized {
+				slog.Error("unauthorized access attempt")
 				response.WriteJson(w, http.StatusForbidden, apperrors.ErrAccessForbidden.Error(), nil)
 				return
 			}

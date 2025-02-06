@@ -3,6 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -74,7 +77,8 @@ func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserReq
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return User{}, err
+		slog.Error("failed to create user", "error", err)
+		return User{}, fmt.Errorf("failed to create user")
 	}
 
 	return user, nil
@@ -98,7 +102,12 @@ func (ur *userRepository) GetUserById(ctx context.Context, userId int) (User, er
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return User{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error("no user found with Id", "error", err)
+			return User{}, fmt.Errorf("no user found with Id %d", userId)
+		}
+		slog.Error("failed to fetch user with Id", "error", err)
+		return User{}, fmt.Errorf("failed to fetch user with Id %d", userId)
 	}
 
 	return user, nil
@@ -122,7 +131,12 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (Use
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return User{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error("no user found with email", "error", err)
+			return User{}, fmt.Errorf("no user found with email %s", email)
+		}
+		slog.Error("failed to fetch user with email", "error", err)
+		return User{}, fmt.Errorf("failed to fetch user with email %s", email)
 	}
 
 	return user, nil
@@ -131,7 +145,8 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (Use
 func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, userId int) error {
 	_, err := ur.DB.ExecContext(ctx, updateUserEmailVerifiedStatusQuery, userId)
 	if err != nil {
-		return err
+		slog.Error("failed to update user verified status", "error", err)
+		return fmt.Errorf("failed to update user verified status for user with Id %d", userId)
 	}
 
 	return nil
@@ -140,7 +155,8 @@ func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, use
 func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, password string) error {
 	_, err := ur.DB.ExecContext(ctx, updateUserPasswordQuery, password, userId)
 	if err != nil {
-		return err
+		slog.Error("failed to update user password", "error", err)
+		return fmt.Errorf("failed to update user password for user with Id %d", userId)
 	}
 
 	return nil
@@ -149,7 +165,8 @@ func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, pa
 func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role string) error {
 	_, err := ur.DB.ExecContext(ctx, updateUserRoleQuery, role, userId)
 	if err != nil {
-		return err
+		slog.Error("failed to update user role", "error", err)
+		return fmt.Errorf("failed to update user role for user with Id %d", userId)
 	}
 
 	return nil
@@ -172,7 +189,8 @@ func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId in
 		&verificationToken.ExpiresAt,
 	)
 	if err != nil {
-		return verificationToken, err
+		slog.Error("failed to create verification token", "error", err, "data", fmt.Sprintf("{UserId: %d Type: %s}", userId, tokenType))
+		return VerificationToken{}, fmt.Errorf("failed to fetch verification token for user with id %d", userId)
 	}
 
 	return verificationToken, nil
@@ -192,7 +210,12 @@ func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token
 		&verificationToken.ExpiresAt,
 	)
 	if err != nil {
-		return verificationToken, err
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error("no verification token found", "error", err)
+			return VerificationToken{}, errors.New("no verification token found")
+		}
+		slog.Error("failed to fetch verification token", "error", err)
+		return VerificationToken{}, errors.New("failed to fetch verification token")
 	}
 
 	return verificationToken, nil
@@ -201,7 +224,8 @@ func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token
 func (ur *userRepository) DeleteVerificationTokenById(ctx context.Context, tokenId int) error {
 	_, err := ur.DB.ExecContext(ctx, deleteVerificationTokenByIdQuery, tokenId)
 	if err != nil {
-		return err
+		slog.Error("failed to delete verification token", "error", err)
+		return fmt.Errorf("failed to delete verification token with id %d", tokenId)
 	}
 
 	return nil
