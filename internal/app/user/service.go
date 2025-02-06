@@ -40,6 +40,11 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 
 var cfg = config.GetConfig()
 
+const (
+	emailVerificationEmailContent = "Hello %s,\n\nThank you for registering on Wheelio. Please verify your email address by clicking the link below:\n\n%s\n\nThis link will expire in 10 minutes.\n\nBest regards,\nThe Wheelio Team"
+	resetPasswordEmailContent     = "Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team"
+)
+
 func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody, role string) error {
 	err := userDetails.validate()
 	if err != nil {
@@ -77,10 +82,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	}
 
 	verificationLink := fmt.Sprintf("%s/verify-email?token=%s", cfg.ClientURL, token)
-	emailBody := fmt.Sprintf(
-		"Hello %s,\n\nThank you for registering on Wheelio. Please verify your email address by clicking the link below:\n\n%s\n\nThis link will expire in 10 minutes.\n\nBest regards,\nThe Wheelio Team",
-		newUser.Name, verificationLink,
-	)
+	emailBody := fmt.Sprintf(emailVerificationEmailContent, newUser.Name, verificationLink)
 
 	err = s.emailService.SendEmail(newUser.Name, newUser.Email, "Action Required: Verify Your Wheelio Account", emailBody)
 	if err != nil {
@@ -173,10 +175,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	}
 
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", cfg.ClientURL, token)
-	emailBody := fmt.Sprintf(
-		"Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team",
-		user.Name, resetLink,
-	)
+	emailBody := fmt.Sprintf(resetPasswordEmailContent, user.Name, resetLink)
 
 	err = s.emailService.SendEmail(user.Name, user.Email, "Reset Your Wheelio Password", emailBody)
 	if err != nil {
