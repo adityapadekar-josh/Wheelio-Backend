@@ -6,8 +6,21 @@ import (
 	"regexp"
 	"strings"
 	"time"
+)
 
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
+const (
+	Host   = "HOST"
+	Seeker = "SEEKER"
+)
+
+const (
+	EmailVerification = "EMAIL_VERIFICATION"
+	PasswordReset     = "PASSWORD_RESET"
+)
+
+const (
+	EmailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	PhoneRegex = `^(?:(?:\+91)|91)?[0-9]{10}$`
 )
 
 type User struct {
@@ -64,13 +77,13 @@ func (c CreateUserRequestBody) validate() error {
 
 	if strings.TrimSpace(c.Email) == "" {
 		validationErrors = append(validationErrors, "email is required")
-	} else if !regexp.MustCompile(constant.EmailRegex).MatchString(c.Email) {
+	} else if !regexp.MustCompile(EmailRegex).MatchString(c.Email) {
 		validationErrors = append(validationErrors, "invalid email format")
 	}
 
 	if strings.TrimSpace(c.PhoneNumber) == "" {
 		validationErrors = append(validationErrors, "phone number is required")
-	} else if !regexp.MustCompile(constant.PhoneRegex).MatchString(c.PhoneNumber) {
+	} else if !regexp.MustCompile(PhoneRegex).MatchString(c.PhoneNumber) {
 		validationErrors = append(validationErrors, "invalid phone number format")
 	}
 
@@ -90,7 +103,7 @@ func (c LoginUserRequestBody) validate() error {
 
 	if strings.TrimSpace(c.Email) == "" {
 		validationErrors = append(validationErrors, "email is required")
-	} else if !regexp.MustCompile(constant.EmailRegex).MatchString(c.Email) {
+	} else if !regexp.MustCompile(EmailRegex).MatchString(c.Email) {
 		validationErrors = append(validationErrors, "invalid email format")
 	}
 
@@ -134,7 +147,7 @@ func (c Token) validate() error {
 func (c Email) validate() error {
 	if strings.TrimSpace(c.Email) == "" {
 		return errors.New("validation failed: email is required")
-	} else if !regexp.MustCompile(constant.EmailRegex).MatchString(c.Email) {
+	} else if !regexp.MustCompile(EmailRegex).MatchString(c.Email) {
 		return errors.New("validation failed: invalid email format")
 	}
 

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
 )
 
@@ -22,7 +21,7 @@ func SignUpUser(userService Service) http.HandlerFunc {
 			return
 		}
 
-		err = userService.RegisterUser(ctx, requestBody, constant.Seeker)
+		err = userService.RegisterUser(ctx, requestBody, Seeker)
 		if err != nil {
 			slog.Error("failed to register new user", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)
@@ -158,7 +157,7 @@ func HostSignUpUser(userService Service) http.HandlerFunc {
 			return
 		}
 
-		err = userService.RegisterUser(ctx, requestBody, constant.Host)
+		err = userService.RegisterUser(ctx, requestBody, Host)
 		if err != nil {
 			slog.Error("failed to register new host", "error", err.Error())
 			status, errorMessage := apperrors.MapError(err)

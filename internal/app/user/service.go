@@ -10,7 +10,6 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/email"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
@@ -72,7 +71,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	}
 
 	expiresAt := time.Now().Add(10 * time.Minute)
-	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, constant.EmailVerification, expiresAt)
+	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, EmailVerification, expiresAt)
 	if err != nil {
 		return err
 	}
@@ -135,7 +134,7 @@ func (s *service) VerifyEmail(ctx context.Context, token Token) error {
 	}
 
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, token.Token)
-	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.EmailVerification {
+	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != EmailVerification {
 		return apperrors.ErrInvalidToken
 	}
 
@@ -168,7 +167,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	}
 
 	expiresAt := time.Now().Add(10 * time.Minute)
-	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, constant.PasswordReset, expiresAt)
+	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, PasswordReset, expiresAt)
 	if err != nil {
 		return err
 	}
@@ -196,7 +195,7 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 	}
 
 	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
-	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != constant.PasswordReset {
+	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != PasswordReset {
 		return apperrors.ErrInvalidToken
 	}
 
@@ -222,7 +221,7 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 
 func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 	userId, ok := ctx.Value("userId").(int)
-	
+
 	if !ok {
 		fmt.Println("hii")
 	}
@@ -244,7 +243,7 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
 	userId := ctx.Value(middleware.RequestContextUserIdKey).(int)
 
-	err := s.userRepository.UpdateUserRole(ctx, userId, constant.Host)
+	err := s.userRepository.UpdateUserRole(ctx, userId, Host)
 	if err != nil {
 		return err
 	}

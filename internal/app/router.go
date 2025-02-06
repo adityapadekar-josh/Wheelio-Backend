@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/user"
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/constant"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
 )
@@ -33,7 +32,7 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 		"PATCH /api/v1/auth/host/upgrade",
 		middleware.ChainMiddleware(
 			user.UpgradeUserRoleToHost(deps.UserService),
-			middleware.AuthorizationMiddleware(constant.Seeker),
+			middleware.AuthorizationMiddleware(user.Seeker),
 			middleware.AuthenticationMiddleware,
 		),
 	)
