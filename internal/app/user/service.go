@@ -46,11 +46,11 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 		return apperrors.ErrInvalidRequestBody
 	}
 
-	_, err = s.userRepository.GetUserByEmail(ctx, userDetails.Email)
-	if err == nil {
-		slog.Error("attempted to register with an email that is already in use")
-		return apperrors.ErrEmailAlreadyRegistered
-	}
+	// _, err = s.userRepository.GetUserByEmail(ctx, userDetails.Email)
+	// if err == nil {
+	// 	slog.Error("attempted to register with an email that is already in use")
+	// 	return apperrors.ErrEmailAlreadyRegistered
+	// }
 
 	hashedPassword, err := cryptokit.HashPassword(userDetails.Password)
 	if err != nil {
@@ -63,6 +63,9 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	newUser, err := s.userRepository.CreateUser(ctx, repository.CreateUserRequestBody(userDetails))
 	if err != nil {
 		slog.Error("failed to create new user", "error", err)
+		if errors.Is(err, apperrors.ErrEmailAlreadyRegistered) {
+			return err
+		}
 		return apperrors.ErrUserCreationFailed
 	}
 

@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
+
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 )
 
 type userRepository struct {
@@ -77,6 +80,10 @@ func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserReq
 		&user.UpdatedAt,
 	)
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			slog.Error("attempted to register with an email that is already in use")
+			return User{}, apperrors.ErrEmailAlreadyRegistered
+		}
 		slog.Error("failed to create user", "error", err)
 		return User{}, fmt.Errorf("failed to create user")
 	}

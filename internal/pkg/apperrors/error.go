@@ -28,7 +28,7 @@ var (
 
 func MapError(err error) (statusCode int, errMessage string) {
 	switch err {
-	case ErrEmailAlreadyRegistered, ErrInvalidRequestBody:
+	case ErrInvalidRequestBody:
 		return http.StatusBadRequest, err.Error()
 	case ErrInvalidLoginCredentials, ErrUnauthorizedAccess:
 		return http.StatusUnauthorized, err.Error()
@@ -36,7 +36,7 @@ func MapError(err error) (statusCode int, errMessage string) {
 		return http.StatusForbidden, err.Error()
 	case ErrUserNotFound:
 		return http.StatusNotFound, err.Error()
-	case ErrUserNotVerified:
+	case ErrEmailAlreadyRegistered, ErrUserNotVerified:
 		return http.StatusConflict, err.Error()
 	case ErrInvalidToken:
 		return http.StatusUnprocessableEntity, err.Error()
