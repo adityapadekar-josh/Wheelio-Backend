@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var defaultJWTSecret = []byte("MyTempSecret")
+
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
@@ -38,7 +40,7 @@ func CreateJWTToken(data jwt.MapClaims) (string, error) {
 
 	var JWTSecret = []byte(config.GetConfig().JWTSecret)
 	if len(JWTSecret) == 0 {
-		JWTSecret = []byte("MyTempSecret")
+		JWTSecret = defaultJWTSecret
 	}
 
 	tokenString, err := token.SignedString([]byte(JWTSecret))
@@ -52,7 +54,7 @@ func CreateJWTToken(data jwt.MapClaims) (string, error) {
 func VerifyJWTToken(tokenString string) (jwt.MapClaims, error) {
 	var JWTSecret = []byte(config.GetConfig().JWTSecret)
 	if len(JWTSecret) == 0 {
-		JWTSecret = []byte("MyTempSecret")
+		JWTSecret = defaultJWTSecret
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
