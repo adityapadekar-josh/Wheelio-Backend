@@ -221,7 +221,11 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 }
 
 func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
-	userId := ctx.Value("userId").(int)
+	userId, ok := ctx.Value("userId").(int)
+	
+	if !ok {
+		fmt.Println("hii")
+	}
 
 	user, err := s.userRepository.GetUserById(ctx, userId)
 	if err != nil {

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -123,30 +124,18 @@ func (c ResetPasswordRequestBody) validate() error {
 }
 
 func (c Token) validate() error {
-	var validationError string
-
 	if strings.TrimSpace(c.Token) == "" {
-		validationError = "token is required"
-	}
-
-	if validationError != "" {
-		return fmt.Errorf("validation failed: %s", validationError)
+		return errors.New("validation failed: token is required")
 	}
 
 	return nil
 }
 
 func (c Email) validate() error {
-	var validationError string
-
 	if strings.TrimSpace(c.Email) == "" {
-		validationError = "email is required"
+		return errors.New("validation failed: email is required")
 	} else if !regexp.MustCompile(constant.EmailRegex).MatchString(c.Email) {
-		validationError = "invalid email format"
-	}
-
-	if validationError != "" {
-		return fmt.Errorf("validation failed: %s", validationError)
+		return errors.New("validation failed: invalid email format")
 	}
 
 	return nil
