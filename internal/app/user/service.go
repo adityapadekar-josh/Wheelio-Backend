@@ -2,8 +2,6 @@ package user
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -57,10 +55,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	newUser, err := s.userRepository.CreateUser(ctx, repository.CreateUserRequestBody(userDetails))
 	if err != nil {
 		slog.Error("failed to create new user", "error", err)
-		if errors.Is(err, apperrors.ErrEmailAlreadyRegistered) {
-			return err
-		}
-		return apperrors.ErrUserCreationFailed
+		return err
 	}
 
 	token, err := cryptokit.GenerateSecureToken(64)
@@ -73,7 +68,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, EmailVerification, expiresAt)
 	if err != nil {
 		slog.Error("failed to create verification token", "error", err)
-		return apperrors.ErrTokenCreationFailed
+		return err
 	}
 
 	cfg := config.GetConfig()
@@ -83,7 +78,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	err = s.emailService.SendEmail(newUser.Name, newUser.Email, "Action Required: Verify Your Wheelio Account", emailBody)
 	if err != nil {
 		slog.Error("failed to send verification email", "error", err)
-		return apperrors.ErrEmailSendFailed
+		return err
 	}
 
 	return nil
@@ -142,8 +137,8 @@ func (s *service) VerifyEmail(ctx context.Context, token Token) error {
 
 	err = s.userRepository.UpdateUserEmailVerifiedStatus(ctx, verificationToken.UserId)
 	if err != nil {
-		slog.Error("failed to update user email verified status", "userId", verificationToken.UserId, "error", err)
-		return errors.New("failed to update user email verified status")
+		slog.Error("failed to update user email verified status", "error", err)
+		return err
 	}
 
 	err = s.userRepository.DeleteVerificationTokenById(ctx, verificationToken.Id)
@@ -177,7 +172,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, PasswordReset, expiresAt)
 	if err != nil {
 		slog.Error("failed to create password reset token", "error", err)
-		return apperrors.ErrTokenCreationFailed
+		return err
 	}
 
 	cfg := config.GetConfig()
@@ -187,7 +182,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	err = s.emailService.SendEmail(user.Name, user.Email, "Reset Your Wheelio Password", emailBody)
 	if err != nil {
 		slog.Error("failed to send reset password email", "error", err)
-		return apperrors.ErrEmailSendFailed
+		return err
 	}
 
 	return nil
@@ -221,7 +216,7 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 	err = s.userRepository.UpdateUserPassword(ctx, verificationToken.UserId, hashedPassword)
 	if err != nil {
 		slog.Error("failed to update user password", "error", err)
-		return errors.New("failed to update user password")
+		return err
 	}
 
 	err = s.userRepository.DeleteVerificationTokenById(ctx, verificationToken.Id)
@@ -242,12 +237,8 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 
 	user, err := s.userRepository.GetUserById(ctx, userId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			slog.Error("user not found", "error", err)
-			return User{}, apperrors.ErrUserNotFound
-		}
 		slog.Error("failed to get user by id", "error", err)
-		return User{}, errors.New("failed to get logged in user details")
+		return User{}, err
 	}
 
 	return User(user), nil
@@ -264,7 +255,7 @@ func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
 	err := s.userRepository.UpdateUserRole(ctx, userId, Host)
 	if err != nil {
 		slog.Error("failed to upgrade user role to host", "error", err)
-		return errors.New("failed to upgrade user role to host")
+		return err
 	}
 
 	return nil

@@ -18,7 +18,6 @@ var (
 	ErrEmailAlreadyRegistered  = errors.New("email is already registered")
 	ErrInvalidLoginCredentials = errors.New("invalid email or password")
 	ErrUserNotVerified         = errors.New("user account is not verified. please check your email")
-	ErrUserCreationFailed      = errors.New("failed to create user")
 
 	ErrJWTCreationFailed   = errors.New("failed to create jwt token")
 	ErrTokenCreationFailed = errors.New("failed to create verification token")
