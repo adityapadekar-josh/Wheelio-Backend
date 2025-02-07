@@ -40,7 +40,7 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) error {
 	err := userDetails.validate()
 	if err != nil {
-		slog.Error("user details validation failed", "error", err.Error())
+		slog.Error("user details validation failed", "error", err)
 		return apperrors.ErrInvalidRequestBody
 	}
 

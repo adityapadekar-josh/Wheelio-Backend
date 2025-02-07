@@ -16,14 +16,14 @@ func SignUpUser(userService Service) http.HandlerFunc {
 		var requestBody CreateUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		err = userService.RegisterUser(ctx, requestBody)
 		if err != nil {
-			slog.Error("failed to register new user", "error", err.Error())
+			slog.Error("failed to register new user", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -40,14 +40,14 @@ func SignInUser(userService Service) http.HandlerFunc {
 		var requestBody LoginUserRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		loginData, err := userService.LoginUser(ctx, requestBody)
 		if err != nil {
-			slog.Error("failed to login user", "error", err.Error())
+			slog.Error("failed to login user", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -64,14 +64,14 @@ func VerifyEmail(userService Service) http.HandlerFunc {
 		var requestBody Token
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		err = userService.VerifyEmail(ctx, requestBody)
 		if err != nil {
-			slog.Error("failed to verify user email", "error", err.Error())
+			slog.Error("failed to verify user email", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -88,14 +88,14 @@ func ForgotPassword(userService Service) http.HandlerFunc {
 		var requestBody Email
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		err = userService.ForgotPassword(ctx, requestBody)
 		if err != nil {
-			slog.Error("failed to generate forgot password link", "error", err.Error())
+			slog.Error("failed to generate forgot password link", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -112,14 +112,14 @@ func ResetPassword(userService Service) http.HandlerFunc {
 		var requestBody ResetPasswordRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
-			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err.Error())
+			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidRequestBody.Error(), nil)
 			return
 		}
 
 		err = userService.ResetPassword(ctx, requestBody)
 		if err != nil {
-			slog.Error("failed to reset user password", "error", err.Error())
+			slog.Error("failed to reset user password", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -135,7 +135,7 @@ func GetLoggedInUser(userService Service) http.HandlerFunc {
 
 		user, err := userService.GetLoggedInUser(ctx)
 		if err != nil {
-			slog.Error("failed to get logged in user", "error", err.Error())
+			slog.Error("failed to get logged in user", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -151,7 +151,7 @@ func UpgradeUserRoleToHost(userService Service) http.HandlerFunc {
 
 		err := userService.UpgradeUserRoleToHost(ctx)
 		if err != nil {
-			slog.Error("failed to upgrade user to host", "error", err.Error())
+			slog.Error("failed to upgrade user to host", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return

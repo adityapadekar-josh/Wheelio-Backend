@@ -17,13 +17,13 @@ import (
 func main() {
 	cfg, err := config.MustLoad()
 	if err != nil {
-		slog.Error("failed to load config", "error", err.Error())
+		slog.Error("failed to load config", "error", err)
 		return
 	}
 
 	db, err := config.InitDataStore(cfg)
 	if err != nil {
-		slog.Error("failed to connect to database", "error", err.Error())
+		slog.Error("failed to connect to database", "error", err)
 		return
 	}
 	defer db.Close()
@@ -53,7 +53,7 @@ func main() {
 		slog.Info("server listening at", "port", cfg.HTTPServer.Port)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("server error", "error", err.Error())
+			slog.Error("server error", "error", err)
 			serverRunning <- syscall.SIGINT
 		}
 	}()
@@ -65,7 +65,7 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("cannot shut HTTP server down gracefully", "error", err.Error())
+		slog.Error("cannot shut HTTP server down gracefully", "error", err)
 	}
 
 	slog.Info("server shutdown successfully")
