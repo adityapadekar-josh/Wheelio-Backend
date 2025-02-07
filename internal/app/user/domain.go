@@ -9,21 +9,19 @@ import (
 )
 
 const (
+	// User roles
 	Host   = "HOST"
 	Seeker = "SEEKER"
-)
 
-const (
+	// Verification token types
 	EmailVerification = "EMAIL_VERIFICATION"
 	PasswordReset     = "PASSWORD_RESET"
-)
 
-const (
+	// Validation regex
 	EmailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	PhoneRegex = `^(?:(?:\+91)|91)?[0-9]{10}$`
-)
 
-const (
+	// Time to live constants
 	accessTokenTTL       = time.Hour * 24 * 30
 	verificationTokenTTL = time.Minute * 10
 )
