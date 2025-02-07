@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 	"time"
 )
@@ -33,6 +32,11 @@ const (
 	emailVerificationEmailContent = "Hello %s,\n\nThank you for registering on Wheelio. Please verify your email address by clicking the link below:\n\n%s\n\nThis link will expire in 10 minutes.\n\nBest regards,\nThe Wheelio Team"
 	resetPasswordEmailContent     = "Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team"
 )
+
+var AvailableRoles = map[string]interface{}{
+	Host:   nil,
+	Seeker: nil,
+}
 
 type User struct {
 	Id          int       `json:"id"`
@@ -102,8 +106,7 @@ func (c CreateUserRequestBody) validate() error {
 	if strings.TrimSpace(c.Role) == "" {
 		validationErrors = append(validationErrors, "role is required")
 	} else {
-		roles := []string{Host, Seeker}
-		if !slices.Contains(roles, c.Role) {
+		if _, ok := AvailableRoles[c.Role]; !ok {
 			validationErrors = append(validationErrors, "invalid role")
 		}
 	}
