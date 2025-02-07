@@ -41,7 +41,7 @@ type User struct {
 	PhoneNumber string    `json:"phoneNumber"`
 	Password    string    `json:"-"`
 	Role        string    `json:"role"`
-	IsVerified  bool      `json:"is_verified"`
+	IsVerified  bool      `json:"isVerified"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
