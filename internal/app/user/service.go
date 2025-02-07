@@ -37,8 +37,8 @@ func NewService(userRepository repository.UserRepository, emailService email.Ser
 	}
 }
 
-func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) error {
-	err := userDetails.validate()
+func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) (err error) {
+	err = userDetails.validate()
 	if err != nil {
 		slog.Error("user details validation failed", "error", err)
 		return apperrors.ErrInvalidRequestBody
@@ -52,7 +52,19 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 
 	userDetails.Password = hashedPassword
 
-	newUser, err := s.userRepository.CreateUser(ctx, repository.CreateUserRequestBody(userDetails))
+	tx, err := s.userRepository.BeginTx(ctx)
+	if err != nil {
+		slog.Error("failed to start user creation", "error", err.Error())
+		return err
+	}
+
+	defer func() {
+		if txErr := s.userRepository.HandleTransaction(ctx, tx, err); txErr != nil {
+			slog.Error("failed to handle transaction", "error", txErr)
+		}
+	}()
+
+	newUser, err := s.userRepository.CreateUser(ctx, tx, repository.CreateUserRequestBody(userDetails))
 	if err != nil {
 		slog.Error("failed to create new user", "error", err)
 		return err
@@ -65,7 +77,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	}
 
 	expiresAt := time.Now().Add(verificationTokenTTL)
-	_, err = s.userRepository.CreateVerificationToken(ctx, newUser.Id, token, EmailVerification, expiresAt)
+	_, err = s.userRepository.CreateVerificationToken(ctx, tx, newUser.Id, token, EmailVerification, expiresAt)
 	if err != nil {
 		slog.Error("failed to create verification token", "error", err)
 		return err
@@ -91,7 +103,7 @@ func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBo
 		return AccessToken{}, apperrors.ErrInvalidRequestBody
 	}
 
-	user, err := s.userRepository.GetUserByEmail(ctx, loginDetails.Email)
+	user, err := s.userRepository.GetUserByEmail(ctx, nil, loginDetails.Email)
 	if err != nil {
 		slog.Error("user not found by email", "error", err)
 		return AccessToken{}, apperrors.ErrInvalidLoginCredentials
@@ -129,19 +141,19 @@ func (s *service) VerifyEmail(ctx context.Context, token Token) error {
 		return apperrors.ErrInvalidRequestBody
 	}
 
-	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, token.Token)
+	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, nil, token.Token)
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != EmailVerification {
 		slog.Error("invalid or expired verification token", "error", err)
 		return apperrors.ErrInvalidToken
 	}
 
-	err = s.userRepository.UpdateUserEmailVerifiedStatus(ctx, verificationToken.UserId)
+	err = s.userRepository.UpdateUserEmailVerifiedStatus(ctx, nil, verificationToken.UserId)
 	if err != nil {
 		slog.Error("failed to update user email verified status", "error", err)
 		return err
 	}
 
-	err = s.userRepository.DeleteVerificationTokenById(ctx, verificationToken.Id)
+	err = s.userRepository.DeleteVerificationTokenById(ctx, nil, verificationToken.Id)
 	if err != nil {
 		slog.Warn("failed to delete verification token", "error", err)
 	}
@@ -156,7 +168,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 		return apperrors.ErrInvalidRequestBody
 	}
 
-	user, err := s.userRepository.GetUserByEmail(ctx, email.Email)
+	user, err := s.userRepository.GetUserByEmail(ctx, nil, email.Email)
 	if err != nil {
 		slog.Warn("no user found for the given email for password reset request", "email", email.Email)
 		return nil
@@ -169,7 +181,7 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	}
 
 	expiresAt := time.Now().Add(verificationTokenTTL)
-	_, err = s.userRepository.CreateVerificationToken(ctx, user.Id, token, PasswordReset, expiresAt)
+	_, err = s.userRepository.CreateVerificationToken(ctx, nil, user.Id, token, PasswordReset, expiresAt)
 	if err != nil {
 		slog.Error("failed to create password reset token", "error", err)
 		return err
@@ -195,13 +207,13 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 		return apperrors.ErrInvalidRequestBody
 	}
 
-	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, resetPasswordDetails.Token)
+	verificationToken, err := s.userRepository.GetVerificationTokenByToken(ctx, nil, resetPasswordDetails.Token)
 	if err != nil || verificationToken.ExpiresAt.Before(time.Now()) || verificationToken.Type != PasswordReset {
 		slog.Error("invalid or expired reset password token", "error", err)
 		return apperrors.ErrInvalidToken
 	}
 
-	_, err = s.userRepository.GetUserById(ctx, verificationToken.UserId)
+	_, err = s.userRepository.GetUserById(ctx, nil, verificationToken.UserId)
 	if err != nil {
 		slog.Error("failed to find user by id", "error", err)
 		return apperrors.ErrInvalidToken
@@ -213,13 +225,13 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 		return apperrors.ErrInternalServer
 	}
 
-	err = s.userRepository.UpdateUserPassword(ctx, verificationToken.UserId, hashedPassword)
+	err = s.userRepository.UpdateUserPassword(ctx, nil, verificationToken.UserId, hashedPassword)
 	if err != nil {
 		slog.Error("failed to update user password", "error", err)
 		return err
 	}
 
-	err = s.userRepository.DeleteVerificationTokenById(ctx, verificationToken.Id)
+	err = s.userRepository.DeleteVerificationTokenById(ctx, nil, verificationToken.Id)
 	if err != nil {
 		slog.Warn("failed to delete verification token", "error", err)
 	}
@@ -235,7 +247,7 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 		return User{}, apperrors.ErrInternalServer
 	}
 
-	user, err := s.userRepository.GetUserById(ctx, userId)
+	user, err := s.userRepository.GetUserById(ctx, nil, userId)
 	if err != nil {
 		slog.Error("failed to get user by id", "error", err)
 		return User{}, err
@@ -252,7 +264,7 @@ func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
 		return apperrors.ErrInternalServer
 	}
 
-	err := s.userRepository.UpdateUserRole(ctx, userId, Host)
+	err := s.userRepository.UpdateUserRole(ctx, nil, userId, Host)
 	if err != nil {
 		slog.Error("failed to upgrade user role to host", "error", err)
 		return err

@@ -13,23 +13,26 @@ import (
 )
 
 type userRepository struct {
-	DB *sql.DB
+	BaseRepository
 }
 
 type UserRepository interface {
-	GetUserById(ctx context.Context, userId int) (User, error)
-	GetUserByEmail(ctx context.Context, email string) (User, error)
-	CreateUser(ctx context.Context, userData CreateUserRequestBody) (User, error)
-	UpdateUserEmailVerifiedStatus(ctx context.Context, userId int) error
-	CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error)
-	GetVerificationTokenByToken(ctx context.Context, token string) (VerificationToken, error)
-	DeleteVerificationTokenById(ctx context.Context, tokenId int) error
-	UpdateUserPassword(ctx context.Context, userId int, password string) error
-	UpdateUserRole(ctx context.Context, userId int, role string) error
+	RepositoryTransaction
+	GetUserById(ctx context.Context, tx *sql.Tx, userId int) (User, error)
+	GetUserByEmail(ctx context.Context, tx *sql.Tx, email string) (User, error)
+	CreateUser(ctx context.Context, tx *sql.Tx, userData CreateUserRequestBody) (User, error)
+	UpdateUserEmailVerifiedStatus(ctx context.Context, tx *sql.Tx, userId int) error
+	CreateVerificationToken(ctx context.Context, tx *sql.Tx, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error)
+	GetVerificationTokenByToken(ctx context.Context, tx *sql.Tx, token string) (VerificationToken, error)
+	DeleteVerificationTokenById(ctx context.Context, tx *sql.Tx, tokenId int) error
+	UpdateUserPassword(ctx context.Context, tx *sql.Tx, userId int, password string) error
+	UpdateUserRole(ctx context.Context, tx *sql.Tx, userId int, role string) error
 }
 
 func NewUserRepository(db *sql.DB) UserRepository {
-	return &userRepository{DB: db}
+	return &userRepository{
+		BaseRepository: BaseRepository{db},
+	}
 }
 
 const (
@@ -58,9 +61,11 @@ const (
 	deleteVerificationTokenByIdQuery = "DELETE FROM verification_tokens WHERE id=$1"
 )
 
-func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserRequestBody) (User, error) {
+func (ur *userRepository) CreateUser(ctx context.Context, tx *sql.Tx, userData CreateUserRequestBody) (User, error) {
+	executer := ur.initiateQueryExecuter(tx)
+
 	var user User
-	err := ur.DB.QueryRowContext(
+	err := executer.QueryRowContext(
 		ctx,
 		createUserQuery,
 		userData.Name,
@@ -91,9 +96,11 @@ func (ur *userRepository) CreateUser(ctx context.Context, userData CreateUserReq
 	return user, nil
 }
 
-func (ur *userRepository) GetUserById(ctx context.Context, userId int) (User, error) {
+func (ur *userRepository) GetUserById(ctx context.Context, tx *sql.Tx, userId int) (User, error) {
+	executer := ur.initiateQueryExecuter(tx)
+
 	var user User
-	err := ur.DB.QueryRowContext(
+	err := executer.QueryRowContext(
 		ctx,
 		getUserByIdQuery,
 		userId,
@@ -120,9 +127,11 @@ func (ur *userRepository) GetUserById(ctx context.Context, userId int) (User, er
 	return user, nil
 }
 
-func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (User, error) {
+func (ur *userRepository) GetUserByEmail(ctx context.Context, tx *sql.Tx, email string) (User, error) {
+	executer := ur.initiateQueryExecuter(tx)
+
 	var user User
-	err := ur.DB.QueryRowContext(
+	err := executer.QueryRowContext(
 		ctx,
 		getUserByEmailQuery,
 		email,
@@ -149,8 +158,10 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, email string) (Use
 	return user, nil
 }
 
-func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, userId int) error {
-	_, err := ur.DB.ExecContext(ctx, updateUserEmailVerifiedStatusQuery, userId)
+func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, tx *sql.Tx, userId int) error {
+	executer := ur.initiateQueryExecuter(tx)
+
+	_, err := executer.ExecContext(ctx, updateUserEmailVerifiedStatusQuery, userId)
 	if err != nil {
 		slog.Error("failed to update user verified status", "error", err)
 		return apperrors.ErrInternalServer
@@ -159,8 +170,10 @@ func (ur *userRepository) UpdateUserEmailVerifiedStatus(ctx context.Context, use
 	return nil
 }
 
-func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, password string) error {
-	_, err := ur.DB.ExecContext(ctx, updateUserPasswordQuery, password, userId)
+func (ur *userRepository) UpdateUserPassword(ctx context.Context, tx *sql.Tx, userId int, password string) error {
+	executer := ur.initiateQueryExecuter(tx)
+
+	_, err := executer.ExecContext(ctx, updateUserPasswordQuery, password, userId)
 	if err != nil {
 		slog.Error("failed to update user password", "error", err)
 		return apperrors.ErrInternalServer
@@ -169,8 +182,10 @@ func (ur *userRepository) UpdateUserPassword(ctx context.Context, userId int, pa
 	return nil
 }
 
-func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role string) error {
-	_, err := ur.DB.ExecContext(ctx, updateUserRoleQuery, role, userId)
+func (ur *userRepository) UpdateUserRole(ctx context.Context, tx *sql.Tx, userId int, role string) error {
+	executer := ur.initiateQueryExecuter(tx)
+
+	_, err := executer.ExecContext(ctx, updateUserRoleQuery, role, userId)
 	if err != nil {
 		slog.Error("failed to update user role", "error", err)
 		return apperrors.ErrInternalServer
@@ -179,9 +194,11 @@ func (ur *userRepository) UpdateUserRole(ctx context.Context, userId int, role s
 	return nil
 }
 
-func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error) {
+func (ur *userRepository) CreateVerificationToken(ctx context.Context, tx *sql.Tx, userId int, token, tokenType string, expiresAt time.Time) (VerificationToken, error) {
+	executer := ur.initiateQueryExecuter(tx)
+
 	var verificationToken VerificationToken
-	err := ur.DB.QueryRowContext(
+	err := executer.QueryRowContext(
 		ctx,
 		createVerificationTokenQuery,
 		userId,
@@ -203,9 +220,11 @@ func (ur *userRepository) CreateVerificationToken(ctx context.Context, userId in
 	return verificationToken, nil
 }
 
-func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token string) (VerificationToken, error) {
+func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, tx *sql.Tx, token string) (VerificationToken, error) {
+	executer := ur.initiateQueryExecuter(tx)
+
 	var verificationToken VerificationToken
-	err := ur.DB.QueryRowContext(
+	err := executer.QueryRowContext(
 		ctx,
 		getVerificationTokenByTokenQuery,
 		token,
@@ -228,8 +247,10 @@ func (ur *userRepository) GetVerificationTokenByToken(ctx context.Context, token
 	return verificationToken, nil
 }
 
-func (ur *userRepository) DeleteVerificationTokenById(ctx context.Context, tokenId int) error {
-	_, err := ur.DB.ExecContext(ctx, deleteVerificationTokenByIdQuery, tokenId)
+func (ur *userRepository) DeleteVerificationTokenById(ctx context.Context, tx *sql.Tx, tokenId int) error {
+	executer := ur.initiateQueryExecuter(tx)
+
+	_, err := executer.ExecContext(ctx, deleteVerificationTokenByIdQuery, tokenId)
 	if err != nil {
 		slog.Error("failed to delete verification token", "error", err)
 		return apperrors.ErrInternalServer
