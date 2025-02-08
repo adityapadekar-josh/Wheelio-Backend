@@ -103,10 +103,8 @@ func (c CreateUserRequestBody) validate() error {
 
 	if strings.TrimSpace(c.Role) == "" {
 		validationErrors = append(validationErrors, "role is required")
-	} else {
-		if _, ok := AvailableRoles[c.Role]; !ok {
-			validationErrors = append(validationErrors, "invalid role")
-		}
+	} else if _, ok := AvailableRoles[c.Role]; !ok {
+		validationErrors = append(validationErrors, "invalid role")
 	}
 
 	if len(validationErrors) > 0 {

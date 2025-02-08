@@ -7,7 +7,7 @@ import (
 
 var (
 	ErrInternalServer     = errors.New("an unexpected error occurred. please try again later")
-	ErrInvalidRequestBody = errors.New("validation failed. please check the provided details")
+	ErrInvalidRequestBody = errors.New("invalid or missing parameters in the request body")
 	ErrFailedMarshal      = errors.New("failed to parse request body")
 
 	ErrUnauthorizedAccess = errors.New("unauthorized. please provide a valid access token")
@@ -23,6 +23,9 @@ var (
 	ErrTokenCreationFailed = errors.New("failed to create verification token")
 
 	ErrEmailSendFailed = errors.New("failed to send email")
+
+	ErrInvalidImageToLink = errors.New("no image found to link")
+	ErrVehicleNotFound    = errors.New("vehicle not found")
 )
 
 func MapError(err error) (statusCode int, errMessage string) {
@@ -33,7 +36,7 @@ func MapError(err error) (statusCode int, errMessage string) {
 		return http.StatusUnauthorized, err.Error()
 	case ErrAccessForbidden:
 		return http.StatusForbidden, err.Error()
-	case ErrUserNotFound:
+	case ErrUserNotFound, ErrVehicleNotFound:
 		return http.StatusNotFound, err.Error()
 	case ErrEmailAlreadyRegistered, ErrUserNotVerified:
 		return http.StatusConflict, err.Error()
