@@ -10,30 +10,27 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/api"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 )
 
 func main() {
-	ctx := context.Background()
-
 	cfg, err := config.MustLoad()
 	if err != nil {
-		slog.Error("Failed to load config", "error", err.Error())
+		slog.Error("failed to load config", "error", err)
 		return
 	}
 
 	db, err := config.InitDataStore(cfg)
 	if err != nil {
-		slog.Error("Failed to connect to database", "error", err.Error())
+		slog.Error("failed to connect to database", "error", err)
 		return
 	}
 	defer db.Close()
 
 	services := app.NewServices(db)
 
-	router := api.NewRouter(services)
+	router := app.NewRouter(services)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.HTTPServer.Port),
@@ -53,23 +50,23 @@ func main() {
 	)
 
 	go func() {
-		slog.Info("Server listening at", "port", cfg.HTTPServer.Port)
+		slog.Info("server listening at", "port", cfg.HTTPServer.Port)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Server error", slog.String("error", err.Error()))
+			slog.Error("server error", "error", err)
 			serverRunning <- syscall.SIGINT
 		}
 	}()
 
 	<-serverRunning
 
-	slog.Info("Shutting down the server")
-	ctxWT, cancel := context.WithTimeout(ctx, 10*time.Second)
+	slog.Info("shutting down the server")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(ctxWT); err != nil {
-		slog.Error("Cannot shut HTTP server down gracefully", "error", err.Error())
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("cannot shut HTTP server down gracefully", "error", err)
 	}
 
-	slog.Info("Server shutdown successfully")
+	slog.Info("server shutdown successfully")
 }
