@@ -21,13 +21,13 @@ type service struct {
 }
 
 type Service interface {
-	RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) error
-	LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error)
-	VerifyEmail(ctx context.Context, token Token) error
-	ForgotPassword(ctx context.Context, email Email) error
-	ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error
-	GetLoggedInUser(ctx context.Context) (User, error)
-	UpgradeUserRoleToHost(ctx context.Context) error
+	RegisterUser(ctx context.Context, userDetails CreateUserRequestBody) (err error)
+	LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (accessToken AccessToken, err error)
+	VerifyEmail(ctx context.Context, token Token) (err error)
+	ForgotPassword(ctx context.Context, email Email) (err error)
+	ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) (err error)
+	GetLoggedInUser(ctx context.Context) (user User, err error)
+	UpgradeUserRoleToHost(ctx context.Context) (err error)
 }
 
 func NewService(userRepository repository.UserRepository, emailService email.Service) Service {
@@ -96,8 +96,8 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	return nil
 }
 
-func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (AccessToken, error) {
-	err := loginDetails.validate()
+func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBody) (accessToken AccessToken, err error) {
+	err = loginDetails.validate()
 	if err != nil {
 		slog.Error("failed to validate login details", "error", err)
 		return AccessToken{}, apperrors.ErrInvalidRequestBody
@@ -134,8 +134,8 @@ func (s *service) LoginUser(ctx context.Context, loginDetails LoginUserRequestBo
 	return AccessToken{AccessToken: token}, nil
 }
 
-func (s *service) VerifyEmail(ctx context.Context, token Token) error {
-	err := token.validate()
+func (s *service) VerifyEmail(ctx context.Context, token Token) (err error) {
+	err = token.validate()
 	if err != nil {
 		slog.Error("failed to validate token", "error", err)
 		return apperrors.ErrInvalidRequestBody
@@ -161,8 +161,8 @@ func (s *service) VerifyEmail(ctx context.Context, token Token) error {
 	return nil
 }
 
-func (s *service) ForgotPassword(ctx context.Context, email Email) error {
-	err := email.validate()
+func (s *service) ForgotPassword(ctx context.Context, email Email) (err error) {
+	err = email.validate()
 	if err != nil {
 		slog.Error("failed to validate email", "error", err)
 		return apperrors.ErrInvalidRequestBody
@@ -200,8 +200,8 @@ func (s *service) ForgotPassword(ctx context.Context, email Email) error {
 	return nil
 }
 
-func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) error {
-	err := resetPasswordDetails.validate()
+func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) (err error) {
+	err = resetPasswordDetails.validate()
 	if err != nil {
 		slog.Error("failed to validate reset password details", "error", err)
 		return apperrors.ErrInvalidRequestBody
@@ -239,7 +239,7 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 	return nil
 }
 
-func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
+func (s *service) GetLoggedInUser(ctx context.Context) (user User, err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
 
 	if !ok {
@@ -247,16 +247,16 @@ func (s *service) GetLoggedInUser(ctx context.Context) (User, error) {
 		return User{}, apperrors.ErrInternalServer
 	}
 
-	user, err := s.userRepository.GetUserById(ctx, nil, userId)
+	userData, err := s.userRepository.GetUserById(ctx, nil, userId)
 	if err != nil {
 		slog.Error("failed to get user by id", "error", err)
 		return User{}, err
 	}
 
-	return User(user), nil
+	return User(userData), nil
 }
 
-func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
+func (s *service) UpgradeUserRoleToHost(ctx context.Context) (err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
 
 	if !ok {
@@ -264,7 +264,7 @@ func (s *service) UpgradeUserRoleToHost(ctx context.Context) error {
 		return apperrors.ErrInternalServer
 	}
 
-	err := s.userRepository.UpdateUserRole(ctx, nil, userId, Host)
+	err = s.userRepository.UpdateUserRole(ctx, nil, userId, Host)
 	if err != nil {
 		slog.Error("failed to upgrade user role to host", "error", err)
 		return err
