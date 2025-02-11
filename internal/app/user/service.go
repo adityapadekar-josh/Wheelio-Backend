@@ -61,6 +61,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 	defer func() {
 		if txErr := s.userRepository.HandleTransaction(ctx, tx, err); txErr != nil {
 			slog.Error("failed to handle transaction", "error", txErr)
+			err = txErr
 		}
 	}()
 
