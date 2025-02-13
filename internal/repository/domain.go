@@ -58,5 +58,6 @@ type VehicleImage struct {
 	Id        int
 	VehicleId int
 	Url       string
+	Featured  bool
 	CreatedAt time.Time
 }

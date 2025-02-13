@@ -56,6 +56,7 @@ type VehicleImage struct {
 	Id        int       `json:"id"`
 	VehicleId int       `json:"-"`
 	Url       string    `json:"url"`
+	Featured  bool      `json:"featured"`
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 }
 
@@ -118,11 +119,20 @@ func (v VehicleWithImages) validate() error {
 		validationErrors = append(validationErrors, "pin code must be a 6-digit integer")
 	}
 
-	if len(v.Images) > 0 {
+	if len(v.Images) == 0 {
+		validationErrors = append(validationErrors, "at least one image is required")
+	} else {
+		featuredCount := 0
 		for i, img := range v.Images {
 			if img.Id <= 0 {
 				validationErrors = append(validationErrors, fmt.Sprintf("image at index %d must have a valid id", i))
 			}
+			if img.Featured {
+				featuredCount++
+			}
+		}
+		if featuredCount != 1 {
+			validationErrors = append(validationErrors, "exactly one image must have the featured flag set to true")
 		}
 	}
 

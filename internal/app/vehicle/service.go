@@ -17,7 +17,7 @@ type service struct {
 type Service interface {
 	CreateVehicle(ctx context.Context, vehicleData VehicleWithImages) (VehicleWithImages, error)
 	UpdateVehicle(ctx context.Context, vehicleData VehicleWithImages, vehicleId int) (VehicleWithImages, error)
-	SoftDeleteVehicle(ctx context.Context, vehicleId int) error
+	SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error)
 }
 
 func NewService(vehicleRepository repository.VehicleRepository) Service {
@@ -120,8 +120,8 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImag
 	return MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle, vehicleImages), nil
 }
 
-func (s *service) SoftDeleteVehicle(ctx context.Context, vehicleId int) error {
-	err := s.vehicleRepository.SoftDeleteVehicle(ctx, nil, vehicleId)
+func (s *service) SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error) {
+	err = s.vehicleRepository.SoftDeleteVehicle(ctx, nil, vehicleId)
 	if err != nil {
 		slog.Error("failed to soft delete vehicle", "error", err)
 		return err
