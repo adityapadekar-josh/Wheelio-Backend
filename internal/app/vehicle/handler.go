@@ -24,7 +24,7 @@ func CreateVehicle(vehicleService Service) http.HandlerFunc {
 
 		vehicleData, err := vehicleService.CreateVehicle(ctx, requestBody)
 		if err != nil {
-			slog.Error("failed to create new vehicle", "error", err.Err)
+			slog.Error("failed to create new vehicle", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -40,7 +40,7 @@ func UpdateVehicle(vehicleService Service) http.HandlerFunc {
 		vehicleId := r.PathValue("id")
 		parseVehicleId, err := strconv.ParseInt(vehicleId, 10, 64)
 		if err != nil {
-			slog.Error("invalid vehicle id", "error", err.Err)
+			slog.Error("invalid vehicle id", "error", err)
 			response.WriteJson(w, http.StatusBadRequest, "invalid vehicle id", nil)
 			return
 		}
@@ -55,7 +55,7 @@ func UpdateVehicle(vehicleService Service) http.HandlerFunc {
 
 		vehicleData, err := vehicleService.UpdateVehicle(ctx, requestBody, int(parseVehicleId))
 		if err != nil {
-			slog.Error("failed to update vehicle", "error", err.Err)
+			slog.Error("failed to update vehicle", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
@@ -71,14 +71,14 @@ func SoftDeleteVehicle(vehicleService Service) http.HandlerFunc {
 		vehicleId := r.PathValue("id")
 		parseVehicleId, err := strconv.ParseInt(vehicleId, 10, 64)
 		if err != nil {
-			slog.Error("invalid vehicle id", "error", err.Err)
+			slog.Error("invalid vehicle id", "error", err)
 			response.WriteJson(w, http.StatusBadRequest, "invalid vehicle id", nil)
 			return
 		}
 
 		err = vehicleService.SoftDeleteVehicle(ctx, int(parseVehicleId))
 		if err != nil {
-			slog.Error("failed to soft delete vehicle", "error", err.Err)
+			slog.Error("failed to soft delete vehicle", "error", err)
 			status, errorMessage := apperrors.MapError(err)
 			response.WriteJson(w, status, errorMessage, nil)
 			return
