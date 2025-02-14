@@ -54,7 +54,7 @@ func (s *service) RegisterUser(ctx context.Context, userDetails CreateUserReques
 
 	tx, err := s.userRepository.BeginTx(ctx)
 	if err != nil {
-		slog.Error("failed to start user creation", "error", err.Error())
+		slog.Error("failed to start user creation", "error", err.Err)
 		return err
 	}
 

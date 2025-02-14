@@ -41,7 +41,7 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleWithImag
 
 	tx, err := s.vehicleRepository.BeginTx(ctx)
 	if err != nil {
-		slog.Error("failed to start user creation", "error", err.Error())
+		slog.Error("failed to start user creation", "error", err.Err)
 		return newVehicle, err
 	}
 
@@ -82,7 +82,7 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImag
 
 	tx, err := s.vehicleRepository.BeginTx(ctx)
 	if err != nil {
-		slog.Error("failed to start user creation", "error", err.Error())
+		slog.Error("failed to start user creation", "error", err.Err)
 		return newVehicle, err
 	}
 
