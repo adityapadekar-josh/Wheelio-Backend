@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/user"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/vehicle"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
 )
@@ -32,6 +33,31 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 		middleware.ChainMiddleware(
 			user.UpgradeUserRoleToHost(deps.UserService),
 			middleware.AuthorizationMiddleware(user.Seeker),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+
+	router.HandleFunc(
+		"POST /api/v1/vehicles",
+		middleware.ChainMiddleware(
+			vehicle.CreateVehicle(deps.VehicleService),
+			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"PUT /api/v1/vehicles/{id}",
+		middleware.ChainMiddleware(
+			vehicle.UpdateVehicle(deps.VehicleService),
+			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"DELETE /api/v1/vehicles/{id}",
+		middleware.ChainMiddleware(
+			vehicle.SoftDeleteVehicle(deps.VehicleService),
+			middleware.AuthorizationMiddleware(user.Host),
 			middleware.AuthenticationMiddleware,
 		),
 	)

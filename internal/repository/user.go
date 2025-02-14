@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -149,7 +148,7 @@ func (ur *userRepository) GetUserByEmail(ctx context.Context, tx *sql.Tx, email 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			slog.Error("no user found with email", "error", err)
-			return User{}, fmt.Errorf("no user found with email %s", email)
+			return User{}, apperrors.ErrUserNotFound
 		}
 		slog.Error("failed to fetch user with email", "error", err)
 		return User{}, apperrors.ErrInternalServer
