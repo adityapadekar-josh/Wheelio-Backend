@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app"
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/firebase"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 )
 
@@ -28,7 +29,13 @@ func main() {
 	}
 	defer db.Close()
 
-	services := app.NewServices(db)
+	firebaseBucket, err := firebase.InitFirebaseStorage(cfg)
+	if err != nil {
+		slog.Error("failed to connect to firebase storage", "error", err)
+		return
+	}
+
+	services := app.NewServices(db, firebaseBucket)
 
 	router := app.NewRouter(services)
 

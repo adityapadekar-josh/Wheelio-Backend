@@ -53,11 +53,16 @@ type Vehicle struct {
 }
 
 type VehicleImage struct {
-	Id        int       `json:"id"`
+	Id        int       `json:"id,omitempty"`
 	VehicleId int       `json:"-"`
 	Url       string    `json:"url"`
 	Featured  bool      `json:"featured"`
 	CreatedAt time.Time `json:"createdAt,omitempty"`
+}
+
+type GenerateSignedURLResponseBody struct {
+	SignedUrl string `json:"signedUrl"`
+	AccessUrl string `json:"accessUrl"`
 }
 
 var AvailableFuelType = map[string]interface{}{
@@ -71,6 +76,11 @@ var AvailableTransmissionType = map[string]interface{}{
 	"Manual":    nil,
 	"Automatic": nil,
 }
+
+const (
+	SignedURLExpiry = 15 * time.Minute
+	AccessURLFormat = "https://firebasestorage.googleapis.com/v0/b/wheelio-2f2fa.firebasestorage.app/o/%s?alt=media"
+)
 
 func (v VehicleWithImages) validate() error {
 	var validationErrors []string
@@ -123,10 +133,7 @@ func (v VehicleWithImages) validate() error {
 		validationErrors = append(validationErrors, "at least one image is required")
 	} else {
 		featuredCount := 0
-		for i, img := range v.Images {
-			if img.Id <= 0 {
-				validationErrors = append(validationErrors, fmt.Sprintf("image at index %d must have a valid id", i))
-			}
+		for _, img := range v.Images {
 			if img.Featured {
 				featuredCount++
 			}

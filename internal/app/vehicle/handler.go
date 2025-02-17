@@ -87,3 +87,25 @@ func SoftDeleteVehicle(vehicleService Service) http.HandlerFunc {
 		response.WriteJson(w, http.StatusOK, "vehicle deleted successfully", nil)
 	}
 }
+
+func GenerateSignedVehicleImageUploadURL(vehicleService Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		mimetype := r.URL.Query().Get("mimetype")
+
+		signedUrl, accessUrl, err := vehicleService.GenerateSignedVehicleImageUploadURL(ctx, mimetype)
+		if err != nil {
+			slog.Error("failed to generate signed url for vehicle image upload", "error", err)
+			status, errorMessage := apperrors.MapError(err)
+			response.WriteJson(w, status, errorMessage, nil)
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, "signed url generated successfully",
+			GenerateSignedURLResponseBody{
+				SignedUrl: signedUrl,
+				AccessUrl: accessUrl,
+			},
+		)
+	}
+}

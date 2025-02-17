@@ -18,7 +18,7 @@ type VehicleRepository interface {
 	CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, hostId int) (Vehicle, error)
 	UpdateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, vehicleId int) (Vehicle, error)
 	SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
-	LinkVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageId, vehicleId int) (VehicleImage, error)
+	CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleId int, url string, featured bool) (VehicleImage, error)
 	DeleteAllImagesForVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
 }
 
@@ -70,13 +70,14 @@ const (
 
 	softDeleteVehicleQuery = "UPDATE vehicles SET is_deleted=true WHERE id=$1"
 
-	linkVehicleImageQuery = `
-	UPDATE vehicle_images 
-	SET 
-		vehicle_id=$1 
-	WHERE 
-		id=$2
-	RETURNING *`
+	createVehicleImageQuery = `
+	INSERT INTO vehicle_images (
+		vehicle_id,
+		url,
+		featured
+	)
+	VALUES ($1, $2, $3) 
+	RETURNING *;`
 
 	deleteAllImagesForVehicleQuery = "DELETE FROM vehicle_images WHERE vehicle_id=$1"
 )
@@ -195,27 +196,25 @@ func (vr *vehicleRepository) SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, 
 	return nil
 }
 
-func (vr *vehicleRepository) LinkVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageId, vehicleId int) (VehicleImage, error) {
+func (vr *vehicleRepository) CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleId int, url string, featured bool) (VehicleImage, error) {
 	executer := vr.initiateQueryExecuter(tx)
 
 	var vehicleImage VehicleImage
 	err := executer.QueryRowContext(
 		ctx,
-		linkVehicleImageQuery,
+		createVehicleImageQuery,
 		vehicleId,
-		vehicleImageId,
+		url,
+		featured,
 	).Scan(
 		&vehicleImage.Id,
 		&vehicleImage.VehicleId,
 		&vehicleImage.Url,
+		&vehicleImage.Featured,
 		&vehicleImage.CreatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			slog.Error("no image found to link", "error", err)
-			return VehicleImage{}, apperrors.ErrInvalidImageToLink
-		}
-		slog.Error("failed to link image to vehicle", "error", err)
+		slog.Error("failed to create vehicle image", "error", err)
 		return VehicleImage{}, apperrors.ErrInternalServer
 	}
 

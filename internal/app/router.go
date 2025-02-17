@@ -61,6 +61,13 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 			middleware.AuthenticationMiddleware,
 		),
 	)
+	router.HandleFunc(
+		"GET /api/v1/vehicles/image/upload/signed-url",
+		middleware.ChainMiddleware(
+			vehicle.GenerateSignedVehicleImageUploadURL(deps.VehicleService),
+			middleware.AuthenticationMiddleware,
+		),
+	)
 
 	return router
 }
