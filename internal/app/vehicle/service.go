@@ -48,6 +48,7 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleWithImag
 	defer func() {
 		if txErr := s.vehicleRepository.HandleTransaction(ctx, tx, err); txErr != nil {
 			slog.Error("failed to handle transaction", "error", txErr)
+			err = txErr
 		}
 	}()
 
@@ -89,6 +90,7 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImag
 	defer func() {
 		if txErr := s.vehicleRepository.HandleTransaction(ctx, tx, err); txErr != nil {
 			slog.Error("failed to handle transaction", "error", txErr)
+			err = txErr
 		}
 	}()
 

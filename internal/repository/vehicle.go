@@ -65,7 +65,7 @@ const (
 		pin_code = $11, 
 		cancellation_allowed = $12, 
 		available = $13
-	WHERE id = $14
+	WHERE id = $14 AND is_deleted=false
 	RETURNING *;`
 
 	softDeleteVehicleQuery = "UPDATE vehicles SET is_deleted=true WHERE id=$1"
@@ -124,7 +124,7 @@ func (vr *vehicleRepository) CreateVehicle(ctx context.Context, tx *sql.Tx, vehi
 	)
 	if err != nil {
 		slog.Error("failed to create vehicle", "error", err)
-		return Vehicle{}, nil
+		return Vehicle{}, apperrors.ErrInternalServer
 	}
 
 	return vehicle, nil
