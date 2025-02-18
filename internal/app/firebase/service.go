@@ -26,9 +26,7 @@ func NewService(bucket *storage.BucketHandle) Service {
 
 }
 
-func InitFirebaseStorage(cfg config.Config) (*storage.BucketHandle, error) {
-	ctx := context.Background()
-
+func InitFirebaseStorage(ctx context.Context, cfg config.Config) (*storage.BucketHandle, error) {
 	opt := option.WithCredentialsFile(cfg.FirebaseService.CredentialsFile)
 
 	app, err := firebase.NewApp(context.Background(), nil, opt)

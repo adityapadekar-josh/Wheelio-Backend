@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
 	cfg, err := config.MustLoad()
 	if err != nil {
 		slog.Error("failed to load config", "error", err)
@@ -29,7 +30,7 @@ func main() {
 	}
 	defer db.Close()
 
-	firebaseBucket, err := firebase.InitFirebaseStorage(cfg)
+	firebaseBucket, err := firebase.InitFirebaseStorage(ctx, cfg)
 	if err != nil {
 		slog.Error("failed to connect to firebase storage", "error", err)
 		return
@@ -68,7 +69,7 @@ func main() {
 	<-serverRunning
 
 	slog.Info("shutting down the server")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
