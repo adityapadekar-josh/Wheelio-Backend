@@ -9,28 +9,6 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 )
 
-type VehicleWithImages struct {
-	Id                    int             `json:"id"`
-	Name                  string          `json:"name"`
-	FuelType              string          `json:"fuelType"`
-	SeatCount             int             `json:"seatCount"`
-	TransmissionType      string          `json:"transmissionType"`
-	Features              json.RawMessage `json:"features"`
-	RatePerHour           float64         `json:"ratePerHour"`
-	OverdueFeeRatePerHour float64         `json:"overdueFeeRatePerHour"`
-	Address               string          `json:"address"`
-	State                 string          `json:"state"`
-	City                  string          `json:"city"`
-	PinCode               int             `json:"pinCode"`
-	CancellationAllowed   bool            `json:"cancellationAllowed"`
-	Images                []VehicleImage  `json:"images"`
-	Available             bool            `json:"available"`
-	HostId                int             `json:"hostId"`
-	IsDeleted             bool            `json:"isDeleted"`
-	CreatedAt             time.Time       `json:"createdAt"`
-	UpdatedAt             time.Time       `json:"updatedAt"`
-}
-
 type Vehicle struct {
 	Id                    int             `json:"id"`
 	Name                  string          `json:"name"`
@@ -45,6 +23,7 @@ type Vehicle struct {
 	City                  string          `json:"city"`
 	PinCode               int             `json:"pinCode"`
 	CancellationAllowed   bool            `json:"cancellationAllowed"`
+	Images                []VehicleImage  `json:"images,omitempty"`
 	Available             bool            `json:"available"`
 	HostId                int             `json:"hostId"`
 	IsDeleted             bool            `json:"isDeleted"`
@@ -82,7 +61,7 @@ const (
 	AccessURLFormat = "https://firebasestorage.googleapis.com/v0/b/wheelio-2f2fa.firebasestorage.app/o/%s?alt=media"
 )
 
-func (v VehicleWithImages) validate() error {
+func (v Vehicle) validate() error {
 	var validationErrors []string
 
 	if strings.TrimSpace(v.Name) == "" {
@@ -150,7 +129,7 @@ func (v VehicleWithImages) validate() error {
 	return nil
 }
 
-func MapVehicleWithImagesToVehicleRepo(vehicle VehicleWithImages) repository.Vehicle {
+func MapVehicleWithImagesToVehicleRepo(vehicle Vehicle) repository.Vehicle {
 	mappedVehicle := repository.Vehicle{
 		Id:                    vehicle.Id,
 		Name:                  vehicle.Name,
@@ -175,13 +154,13 @@ func MapVehicleWithImagesToVehicleRepo(vehicle VehicleWithImages) repository.Veh
 	return mappedVehicle
 }
 
-func MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle repository.Vehicle, images []repository.VehicleImage) VehicleWithImages {
+func MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle repository.Vehicle, images []repository.VehicleImage) Vehicle {
 	convertedImages := make([]VehicleImage, len(images))
 	for i, img := range images {
 		convertedImages[i] = VehicleImage(img)
 	}
 
-	mappedVehicle := VehicleWithImages{
+	mappedVehicle := Vehicle{
 		Id:                    vehicle.Id,
 		Name:                  vehicle.Name,
 		FuelType:              vehicle.FuelType,

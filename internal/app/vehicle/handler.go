@@ -14,7 +14,7 @@ func CreateVehicle(vehicleService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody VehicleWithImages
+		var requestBody Vehicle
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
@@ -45,7 +45,7 @@ func UpdateVehicle(vehicleService Service) http.HandlerFunc {
 			return
 		}
 
-		var requestBody VehicleWithImages
+		var requestBody Vehicle
 		err = json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
