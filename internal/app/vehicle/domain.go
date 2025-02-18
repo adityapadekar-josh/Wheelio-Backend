@@ -129,7 +129,7 @@ func (v Vehicle) validate() error {
 	return nil
 }
 
-func MapVehicleWithImagesToVehicleRepo(vehicle Vehicle) repository.Vehicle {
+func MapVehicleToVehicleRepo(vehicle Vehicle) repository.Vehicle {
 	mappedVehicle := repository.Vehicle{
 		Id:                    vehicle.Id,
 		Name:                  vehicle.Name,
@@ -154,7 +154,7 @@ func MapVehicleWithImagesToVehicleRepo(vehicle Vehicle) repository.Vehicle {
 	return mappedVehicle
 }
 
-func MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle repository.Vehicle, images []repository.VehicleImage) Vehicle {
+func MapVehicleRepoAndVehicleImageRepoToVehicle(vehicle repository.Vehicle, images []repository.VehicleImage) Vehicle {
 	convertedImages := make([]VehicleImage, len(images))
 	for i, img := range images {
 		convertedImages[i] = VehicleImage(img)

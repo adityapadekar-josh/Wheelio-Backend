@@ -59,7 +59,7 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData Vehicle) (newVe
 		}
 	}()
 
-	vehicle, err := s.vehicleRepository.CreateVehicle(ctx, tx, MapVehicleWithImagesToVehicleRepo(vehicleData), userId)
+	vehicle, err := s.vehicleRepository.CreateVehicle(ctx, tx, MapVehicleToVehicleRepo(vehicleData), userId)
 	if err != nil {
 		slog.Error("failed to create new vehicle", "error", err)
 		return newVehicle, err
@@ -78,7 +78,7 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData Vehicle) (newVe
 		vehicleImages = append(vehicleImages, createdVehicleImage)
 	}
 
-	return MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle, vehicleImages), nil
+	return MapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
 }
 
 func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicleId int) (newVehicle Vehicle, err error) {
@@ -101,7 +101,7 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicl
 		}
 	}()
 
-	vehicle, err := s.vehicleRepository.UpdateVehicle(ctx, tx, MapVehicleWithImagesToVehicleRepo(vehicleData), vehicleId)
+	vehicle, err := s.vehicleRepository.UpdateVehicle(ctx, tx, MapVehicleToVehicleRepo(vehicleData), vehicleId)
 	if err != nil {
 		slog.Error("failed to update vehicle", "error", err)
 		return newVehicle, err
@@ -126,7 +126,7 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicl
 		vehicleImages = append(vehicleImages, createdVehicleImage)
 	}
 
-	return MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle, vehicleImages), nil
+	return MapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
 }
 
 func (s *service) SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error) {
