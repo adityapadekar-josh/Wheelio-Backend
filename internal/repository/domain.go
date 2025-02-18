@@ -61,3 +61,9 @@ type VehicleImage struct {
 	Featured  bool
 	CreatedAt time.Time
 }
+
+type CreateVehicleImageData struct {
+	VehicleId int
+	Url       string
+	Featured  bool
+}

@@ -67,7 +67,12 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData Vehicle) (newVe
 
 	var vehicleImages []repository.VehicleImage
 	for _, vehicleImage := range vehicleData.Images {
-		createdVehicleImage, err := s.vehicleRepository.CreateVehicleImage(ctx, tx, vehicle.Id, vehicleImage.Url, vehicleImage.Featured)
+		vehicleImageData := repository.CreateVehicleImageData{
+			VehicleId: vehicle.Id,
+			Url:       vehicleImage.Url,
+			Featured:  vehicleImage.Featured,
+		}
+		createdVehicleImage, err := s.vehicleRepository.CreateVehicleImage(ctx, tx, vehicleImageData)
 		if err != nil {
 			slog.Error("failed to link image with vehicle", "error", err)
 			if errors.Is(err, apperrors.ErrInvalidImageToLink) {
@@ -115,7 +120,12 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicl
 
 	var vehicleImages []repository.VehicleImage
 	for _, vehicleImage := range vehicleData.Images {
-		createdVehicleImage, err := s.vehicleRepository.CreateVehicleImage(ctx, tx, vehicle.Id, vehicleImage.Url, vehicleImage.Featured)
+		vehicleImageData := repository.CreateVehicleImageData{
+			VehicleId: vehicle.Id,
+			Url:       vehicleImage.Url,
+			Featured:  vehicleImage.Featured,
+		}
+		createdVehicleImage, err := s.vehicleRepository.CreateVehicleImage(ctx, tx, vehicleImageData)
 		if err != nil {
 			slog.Error("failed to link image with vehicle", "error", err)
 			if errors.Is(err, apperrors.ErrInvalidImageToLink) {

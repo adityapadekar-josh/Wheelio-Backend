@@ -18,7 +18,7 @@ type VehicleRepository interface {
 	CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, hostId int) (Vehicle, error)
 	UpdateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, vehicleId int) (Vehicle, error)
 	SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
-	CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleId int, url string, featured bool) (VehicleImage, error)
+	CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageData CreateVehicleImageData) (VehicleImage, error)
 	DeleteAllImagesForVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
 }
 
@@ -196,16 +196,16 @@ func (vr *vehicleRepository) SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, 
 	return nil
 }
 
-func (vr *vehicleRepository) CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleId int, url string, featured bool) (VehicleImage, error) {
+func (vr *vehicleRepository) CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageData CreateVehicleImageData) (VehicleImage, error) {
 	executer := vr.initiateQueryExecuter(tx)
 
 	var vehicleImage VehicleImage
 	err := executer.QueryRowContext(
 		ctx,
 		createVehicleImageQuery,
-		vehicleId,
-		url,
-		featured,
+		vehicleImageData.VehicleId,
+		vehicleImageData.Url,
+		vehicleImageData.Featured,
 	).Scan(
 		&vehicleImage.Id,
 		&vehicleImage.VehicleId,
