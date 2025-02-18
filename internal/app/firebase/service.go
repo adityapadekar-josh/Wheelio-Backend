@@ -23,13 +23,12 @@ func NewService(bucket *storage.BucketHandle) Service {
 	return &service{
 		bucket: bucket,
 	}
-
 }
 
 func InitFirebaseStorage(ctx context.Context, cfg config.Config) (*storage.BucketHandle, error) {
 	opt := option.WithCredentialsFile(cfg.FirebaseService.CredentialsFile)
 
-	app, err := firebase.NewApp(context.Background(), nil, opt)
+	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
 		slog.Error("failed to initialize firebase app", "error", err)
 		return nil, err
