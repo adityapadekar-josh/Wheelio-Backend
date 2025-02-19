@@ -9,6 +9,23 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 )
 
+const (
+	SignedURLExpiry = 15 * time.Minute
+	AccessURLFormat = "https://firebasestorage.googleapis.com/v0/b/wheelio-2f2fa.firebasestorage.app/o/%s?alt=media"
+)
+
+var AvailableFuelType = map[string]struct{}{
+	"Petrol":   {},
+	"Diesel":   {},
+	"Electric": {},
+	"Hybrid":   {},
+}
+
+var AvailableTransmissionType = map[string]struct{}{
+	"Manual":    {},
+	"Automatic": {},
+}
+
 type Vehicle struct {
 	Id                    int             `json:"id"`
 	Name                  string          `json:"name"`
@@ -39,29 +56,28 @@ type VehicleImage struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 }
 
+type VehicleRequestBody struct {
+	Name                  string          `json:"name"`
+	FuelType              string          `json:"fuelType"`
+	SeatCount             int             `json:"seatCount"`
+	TransmissionType      string          `json:"transmissionType"`
+	Features              json.RawMessage `json:"features"`
+	RatePerHour           float64         `json:"ratePerHour"`
+	OverdueFeeRatePerHour float64         `json:"overdueFeeRatePerHour"`
+	Address               string          `json:"address"`
+	State                 string          `json:"state"`
+	City                  string          `json:"city"`
+	PinCode               int             `json:"pinCode"`
+	CancellationAllowed   bool            `json:"cancellationAllowed"`
+	Images                []VehicleImage  `json:"images,omitempty"`
+}
+
 type GenerateSignedURLResponseBody struct {
 	SignedUrl string `json:"signedUrl"`
 	AccessUrl string `json:"accessUrl"`
 }
 
-var AvailableFuelType = map[string]interface{}{
-	"Petrol":   nil,
-	"Diesel":   nil,
-	"Electric": nil,
-	"Hybrid":   nil,
-}
-
-var AvailableTransmissionType = map[string]interface{}{
-	"Manual":    nil,
-	"Automatic": nil,
-}
-
-const (
-	SignedURLExpiry = 15 * time.Minute
-	AccessURLFormat = "https://firebasestorage.googleapis.com/v0/b/wheelio-2f2fa.firebasestorage.app/o/%s?alt=media"
-)
-
-func (v Vehicle) validate() error {
+func (v VehicleRequestBody) validate() error {
 	var validationErrors []string
 
 	if strings.TrimSpace(v.Name) == "" {
@@ -129,32 +145,45 @@ func (v Vehicle) validate() error {
 	return nil
 }
 
-func MapVehicleToVehicleRepo(vehicle Vehicle) repository.Vehicle {
-	mappedVehicle := repository.Vehicle{
-		Id:                    vehicle.Id,
-		Name:                  vehicle.Name,
-		FuelType:              vehicle.FuelType,
-		SeatCount:             vehicle.SeatCount,
-		TransmissionType:      vehicle.TransmissionType,
-		Features:              vehicle.Features,
-		RatePerHour:           vehicle.RatePerHour,
-		OverdueFeeRatePerHour: vehicle.OverdueFeeRatePerHour,
-		Address:               vehicle.Address,
-		State:                 vehicle.State,
-		City:                  vehicle.City,
-		PinCode:               vehicle.PinCode,
-		CancellationAllowed:   vehicle.CancellationAllowed,
-		Available:             vehicle.Available,
-		HostId:                vehicle.HostId,
-		IsDeleted:             vehicle.IsDeleted,
-		CreatedAt:             vehicle.CreatedAt,
-		UpdatedAt:             vehicle.UpdatedAt,
+func mapVehicleRequestBodyToCreateUserRequestBodyRepo(vehicleRequestBody VehicleRequestBody) repository.CreateVehicleRequestBody {
+	mappedVehicle := repository.CreateVehicleRequestBody{
+		Name:                  vehicleRequestBody.Name,
+		FuelType:              vehicleRequestBody.FuelType,
+		SeatCount:             vehicleRequestBody.SeatCount,
+		TransmissionType:      vehicleRequestBody.TransmissionType,
+		Features:              vehicleRequestBody.Features,
+		RatePerHour:           vehicleRequestBody.RatePerHour,
+		OverdueFeeRatePerHour: vehicleRequestBody.OverdueFeeRatePerHour,
+		Address:               vehicleRequestBody.Address,
+		State:                 vehicleRequestBody.State,
+		City:                  vehicleRequestBody.City,
+		PinCode:               vehicleRequestBody.PinCode,
+		CancellationAllowed:   vehicleRequestBody.CancellationAllowed,
 	}
 
 	return mappedVehicle
 }
 
-func MapVehicleRepoAndVehicleImageRepoToVehicle(vehicle repository.Vehicle, images []repository.VehicleImage) Vehicle {
+func mapVehicleRequestBodyToEditUserRequestBodyRepo(vehicleRequestBody VehicleRequestBody) repository.EditVehicleRequestBody {
+	mappedVehicle := repository.EditVehicleRequestBody{
+		Name:                  vehicleRequestBody.Name,
+		FuelType:              vehicleRequestBody.FuelType,
+		SeatCount:             vehicleRequestBody.SeatCount,
+		TransmissionType:      vehicleRequestBody.TransmissionType,
+		Features:              vehicleRequestBody.Features,
+		RatePerHour:           vehicleRequestBody.RatePerHour,
+		OverdueFeeRatePerHour: vehicleRequestBody.OverdueFeeRatePerHour,
+		Address:               vehicleRequestBody.Address,
+		State:                 vehicleRequestBody.State,
+		City:                  vehicleRequestBody.City,
+		PinCode:               vehicleRequestBody.PinCode,
+		CancellationAllowed:   vehicleRequestBody.CancellationAllowed,
+	}
+
+	return mappedVehicle
+}
+
+func mapVehicleRepoAndVehicleImageRepoToVehicle(vehicle repository.Vehicle, images []repository.VehicleImage) Vehicle {
 	convertedImages := make([]VehicleImage, len(images))
 	for i, img := range images {
 		convertedImages[i] = VehicleImage(img)

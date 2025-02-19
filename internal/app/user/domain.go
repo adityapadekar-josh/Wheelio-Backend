@@ -31,9 +31,9 @@ const (
 	resetPasswordEmailContent     = "Hello %s,\n\nWe received a request to reset your password for your Wheelio account. Click the link below to set a new password:\n\n%s\n\nIf you did not request a password reset, please ignore this email. This link will expire in 10 minutes for security reasons.\n\nBest regards,\nThe Wheelio Team"
 )
 
-var AvailableRoles = map[string]interface{}{
-	Host:   nil,
-	Seeker: nil,
+var AvailableRoles = map[string]struct{}{
+	Host:   {},
+	Seeker: {},
 }
 
 type User struct {

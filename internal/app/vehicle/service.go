@@ -20,8 +20,8 @@ type service struct {
 }
 
 type Service interface {
-	CreateVehicle(ctx context.Context, vehicleData Vehicle) (Vehicle, error)
-	UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicleId int) (Vehicle, error)
+	CreateVehicle(ctx context.Context, vehicleData VehicleRequestBody) (Vehicle, error)
+	UpdateVehicle(ctx context.Context, vehicleData VehicleRequestBody, vehicleId int) (Vehicle, error)
 	SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error)
 	GenerateSignedVehicleImageUploadURL(ctx context.Context, mimetype string) (signedUrl, accessUrl string, err error)
 }
@@ -33,7 +33,7 @@ func NewService(vehicleRepository repository.VehicleRepository, firebaseService 
 	}
 }
 
-func (s *service) CreateVehicle(ctx context.Context, vehicleData Vehicle) (newVehicle Vehicle, err error) {
+func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleRequestBody) (newVehicle Vehicle, err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
 	if !ok {
 		slog.Error("failed to retrieve user id from context")
@@ -59,7 +59,9 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData Vehicle) (newVe
 		}
 	}()
 
-	vehicle, err := s.vehicleRepository.CreateVehicle(ctx, tx, MapVehicleToVehicleRepo(vehicleData), userId)
+	createVehicleData := mapVehicleRequestBodyToCreateUserRequestBodyRepo(vehicleData)
+	createVehicleData.HostId = userId
+	vehicle, err := s.vehicleRepository.CreateVehicle(ctx, tx, createVehicleData)
 	if err != nil {
 		slog.Error("failed to create new vehicle", "error", err)
 		return newVehicle, err
@@ -83,10 +85,10 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData Vehicle) (newVe
 		vehicleImages = append(vehicleImages, createdVehicleImage)
 	}
 
-	return MapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
+	return mapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
 }
 
-func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicleId int) (newVehicle Vehicle, err error) {
+func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleRequestBody, vehicleId int) (newVehicle Vehicle, err error) {
 	err = vehicleData.validate()
 	if err != nil {
 		slog.Error("vehicle details validation failed", "error", err)
@@ -106,7 +108,9 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicl
 		}
 	}()
 
-	vehicle, err := s.vehicleRepository.UpdateVehicle(ctx, tx, MapVehicleToVehicleRepo(vehicleData), vehicleId)
+	editVehicleData := mapVehicleRequestBodyToEditUserRequestBodyRepo(vehicleData)
+	editVehicleData.Id = vehicleId
+	vehicle, err := s.vehicleRepository.UpdateVehicle(ctx, tx, editVehicleData)
 	if err != nil {
 		slog.Error("failed to update vehicle", "error", err)
 		return newVehicle, err
@@ -136,7 +140,7 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData Vehicle, vehicl
 		vehicleImages = append(vehicleImages, createdVehicleImage)
 	}
 
-	return MapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
+	return mapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
 }
 
 func (s *service) SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error) {
