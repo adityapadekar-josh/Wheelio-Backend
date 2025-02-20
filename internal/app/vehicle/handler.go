@@ -168,8 +168,8 @@ func GetVehicles(vehicleService Service) http.HandlerFunc {
 			City:             city,
 			PickupTimestamp:  pickup,
 			DropoffTimestamp: dropoff,
-			Page:             int(page),
-			Limit:            int(limit),
+			Page:             page,
+			Limit:            limit,
 		}
 		vehicles, err := vehicleService.GetVehicles(ctx, params)
 		if err != nil {
