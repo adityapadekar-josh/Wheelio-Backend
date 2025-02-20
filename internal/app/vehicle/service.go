@@ -3,30 +3,37 @@ package vehicle
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"time"
 
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/firebase"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
+	"github.com/google/uuid"
 )
 
 type service struct {
 	vehicleRepository repository.VehicleRepository
+	firebaseService   firebase.Service
 }
 
 type Service interface {
-	CreateVehicle(ctx context.Context, vehicleData VehicleWithImages) (VehicleWithImages, error)
-	UpdateVehicle(ctx context.Context, vehicleData VehicleWithImages, vehicleId int) (VehicleWithImages, error)
+	CreateVehicle(ctx context.Context, vehicleData VehicleRequestBody) (Vehicle, error)
+	UpdateVehicle(ctx context.Context, vehicleData VehicleRequestBody, vehicleId int) (Vehicle, error)
 	SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error)
+	GenerateSignedVehicleImageUploadURL(ctx context.Context, mimetype string) (signedUrl, accessUrl string, err error)
 }
 
-func NewService(vehicleRepository repository.VehicleRepository) Service {
+func NewService(vehicleRepository repository.VehicleRepository, firebaseService firebase.Service) Service {
 	return &service{
 		vehicleRepository: vehicleRepository,
+		firebaseService:   firebaseService,
 	}
 }
 
-func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleWithImages) (newVehicle VehicleWithImages, err error) {
+func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleRequestBody) (newVehicle Vehicle, err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
 	if !ok {
 		slog.Error("failed to retrieve user id from context")
@@ -52,7 +59,9 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleWithImag
 		}
 	}()
 
-	vehicle, err := s.vehicleRepository.CreateVehicle(ctx, tx, MapVehicleWithImagesToVehicleRepo(vehicleData), userId)
+	createVehicleData := mapVehicleRequestBodyToCreateUserRequestBodyRepo(vehicleData)
+	createVehicleData.HostId = userId
+	vehicle, err := s.vehicleRepository.CreateVehicle(ctx, tx, createVehicleData)
 	if err != nil {
 		slog.Error("failed to create new vehicle", "error", err)
 		return newVehicle, err
@@ -60,7 +69,12 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleWithImag
 
 	var vehicleImages []repository.VehicleImage
 	for _, vehicleImage := range vehicleData.Images {
-		updatedVehicleImage, err := s.vehicleRepository.LinkVehicleImage(ctx, tx, vehicleImage.Id, vehicle.Id)
+		vehicleImageData := repository.CreateVehicleImageData{
+			VehicleId: vehicle.Id,
+			Url:       vehicleImage.Url,
+			Featured:  vehicleImage.Featured,
+		}
+		createdVehicleImage, err := s.vehicleRepository.CreateVehicleImage(ctx, tx, vehicleImageData)
 		if err != nil {
 			slog.Error("failed to link image with vehicle", "error", err)
 			if errors.Is(err, apperrors.ErrInvalidImageToLink) {
@@ -68,13 +82,13 @@ func (s *service) CreateVehicle(ctx context.Context, vehicleData VehicleWithImag
 			}
 			return newVehicle, err
 		}
-		vehicleImages = append(vehicleImages, updatedVehicleImage)
+		vehicleImages = append(vehicleImages, createdVehicleImage)
 	}
 
-	return MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle, vehicleImages), nil
+	return mapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
 }
 
-func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImages, vehicleId int) (newVehicle VehicleWithImages, err error) {
+func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleRequestBody, vehicleId int) (newVehicle Vehicle, err error) {
 	err = vehicleData.validate()
 	if err != nil {
 		slog.Error("vehicle details validation failed", "error", err)
@@ -94,7 +108,9 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImag
 		}
 	}()
 
-	vehicle, err := s.vehicleRepository.UpdateVehicle(ctx, tx, MapVehicleWithImagesToVehicleRepo(vehicleData), vehicleId)
+	editVehicleData := mapVehicleRequestBodyToEditUserRequestBodyRepo(vehicleData)
+	editVehicleData.Id = vehicleId
+	vehicle, err := s.vehicleRepository.UpdateVehicle(ctx, tx, editVehicleData)
 	if err != nil {
 		slog.Error("failed to update vehicle", "error", err)
 		return newVehicle, err
@@ -108,7 +124,12 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImag
 
 	var vehicleImages []repository.VehicleImage
 	for _, vehicleImage := range vehicleData.Images {
-		updatedVehicleImage, err := s.vehicleRepository.LinkVehicleImage(ctx, tx, vehicleImage.Id, vehicle.Id)
+		vehicleImageData := repository.CreateVehicleImageData{
+			VehicleId: vehicle.Id,
+			Url:       vehicleImage.Url,
+			Featured:  vehicleImage.Featured,
+		}
+		createdVehicleImage, err := s.vehicleRepository.CreateVehicleImage(ctx, tx, vehicleImageData)
 		if err != nil {
 			slog.Error("failed to link image with vehicle", "error", err)
 			if errors.Is(err, apperrors.ErrInvalidImageToLink) {
@@ -116,10 +137,10 @@ func (s *service) UpdateVehicle(ctx context.Context, vehicleData VehicleWithImag
 			}
 			return newVehicle, err
 		}
-		vehicleImages = append(vehicleImages, updatedVehicleImage)
+		vehicleImages = append(vehicleImages, createdVehicleImage)
 	}
 
-	return MapVehicleRepoAndVehicleImageRepoToVehicleWithImages(vehicle, vehicleImages), nil
+	return mapVehicleRepoAndVehicleImageRepoToVehicle(vehicle, vehicleImages), nil
 }
 
 func (s *service) SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error) {
@@ -130,4 +151,28 @@ func (s *service) SoftDeleteVehicle(ctx context.Context, vehicleId int) (err err
 	}
 
 	return nil
+}
+
+func (s *service) GenerateSignedVehicleImageUploadURL(ctx context.Context, mimetype string) (signedUrl, accessUrl string, err error) {
+	timestamp := time.Now().UnixNano()
+	randomStr := uuid.New().String()[:8]
+
+	objectPath := fmt.Sprintf("vehicles/%d-%s",
+		timestamp,
+		randomStr,
+	)
+
+	if mimetype == "" {
+		mimetype = "image/jpeg"
+	}
+
+	signedUrl, err = s.firebaseService.GenerateSignedURL(ctx, objectPath, mimetype, SignedURLExpiry)
+	if err != nil {
+		slog.Error("failed to generate signed url for vehicle image upload", "error", err)
+		return "", "", err
+	}
+
+	accessUrl = fmt.Sprintf(AccessURLFormat, fmt.Sprintf("vehicles%%2F%d-%s", timestamp, randomStr))
+
+	return signedUrl, accessUrl, nil
 }

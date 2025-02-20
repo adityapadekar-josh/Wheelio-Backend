@@ -25,12 +25,18 @@ type EmailService struct {
 	FromEmail string `yaml:"from_email" required:"true"`
 }
 
+type FirebaseService struct {
+	BucketName          string `yaml:"bucket_name" required:"true"`
+	CredentialsFile string `yaml:"credentials_file" required:"true"`
+}
+
 type Config struct {
-	HTTPServer   HTTPServer   `yaml:"http_server"`
-	Database     Database     `yaml:"database"`
-	EmailService EmailService `yaml:"email_service"`
-	JWTSecret    string       `yaml:"jwt_secret"`
-	ClientURL    string       `yaml:"client_url"`
+	HTTPServer      HTTPServer      `yaml:"http_server"`
+	Database        Database        `yaml:"database"`
+	EmailService    EmailService    `yaml:"email_service"`
+	JWTSecret       string          `yaml:"jwt_secret"`
+	ClientURL       string          `yaml:"client_url"`
+	FirebaseService FirebaseService `yaml:"firebase_service"`
 }
 
 var cfg Config

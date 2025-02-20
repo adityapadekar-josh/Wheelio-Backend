@@ -61,3 +61,41 @@ type VehicleImage struct {
 	Featured  bool
 	CreatedAt time.Time
 }
+
+type CreateVehicleRequestBody struct {
+	Name                  string
+	FuelType              string
+	SeatCount             int
+	TransmissionType      string
+	Features              json.RawMessage
+	RatePerHour           float64
+	OverdueFeeRatePerHour float64
+	Address               string
+	State                 string
+	City                  string
+	PinCode               int
+	CancellationAllowed   bool
+	HostId                int
+}
+
+type EditVehicleRequestBody struct {
+	Id                    int
+	Name                  string
+	FuelType              string
+	SeatCount             int
+	TransmissionType      string
+	Features              json.RawMessage
+	RatePerHour           float64
+	OverdueFeeRatePerHour float64
+	Address               string
+	State                 string
+	City                  string
+	PinCode               int
+	CancellationAllowed   bool
+}
+
+type CreateVehicleImageData struct {
+	VehicleId int
+	Url       string
+	Featured  bool
+}

@@ -15,10 +15,10 @@ type vehicleRepository struct {
 
 type VehicleRepository interface {
 	RepositoryTransaction
-	CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, hostId int) (Vehicle, error)
-	UpdateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, vehicleId int) (Vehicle, error)
+	CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData CreateVehicleRequestBody) (Vehicle, error)
+	UpdateVehicle(ctx context.Context, tx *sql.Tx, vehicleData EditVehicleRequestBody) (Vehicle, error)
 	SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
-	LinkVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageId, vehicleId int) (VehicleImage, error)
+	CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageData CreateVehicleImageData) (VehicleImage, error)
 	DeleteAllImagesForVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
 }
 
@@ -43,10 +43,9 @@ const (
 		city, 
 		pin_code, 
 		cancellation_allowed, 
-		available, 
 		host_id
 	) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 	RETURNING *;`
 
 	updateVehicleQuery = `
@@ -63,25 +62,25 @@ const (
 		state = $9, 
 		city = $10, 
 		pin_code = $11, 
-		cancellation_allowed = $12, 
-		available = $13
-	WHERE id = $14 AND is_deleted=false
+		cancellation_allowed = $12 
+	WHERE id = $13 AND is_deleted=false
 	RETURNING *;`
 
 	softDeleteVehicleQuery = "UPDATE vehicles SET is_deleted=true WHERE id=$1"
 
-	linkVehicleImageQuery = `
-	UPDATE vehicle_images 
-	SET 
-		vehicle_id=$1 
-	WHERE 
-		id=$2
-	RETURNING *`
+	createVehicleImageQuery = `
+	INSERT INTO vehicle_images (
+		vehicle_id,
+		url,
+		featured
+	)
+	VALUES ($1, $2, $3) 
+	RETURNING *;`
 
 	deleteAllImagesForVehicleQuery = "DELETE FROM vehicle_images WHERE vehicle_id=$1"
 )
 
-func (vr *vehicleRepository) CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, hostId int) (Vehicle, error) {
+func (vr *vehicleRepository) CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData CreateVehicleRequestBody) (Vehicle, error) {
 	executer := vr.initiateQueryExecuter(tx)
 
 	var vehicle Vehicle
@@ -100,8 +99,7 @@ func (vr *vehicleRepository) CreateVehicle(ctx context.Context, tx *sql.Tx, vehi
 		vehicleData.City,
 		vehicleData.PinCode,
 		vehicleData.CancellationAllowed,
-		vehicleData.Available,
-		hostId,
+		vehicleData.HostId,
 	).Scan(
 		&vehicle.Id,
 		&vehicle.Name,
@@ -130,7 +128,7 @@ func (vr *vehicleRepository) CreateVehicle(ctx context.Context, tx *sql.Tx, vehi
 	return vehicle, nil
 }
 
-func (vr *vehicleRepository) UpdateVehicle(ctx context.Context, tx *sql.Tx, vehicleData Vehicle, vehicleId int) (Vehicle, error) {
+func (vr *vehicleRepository) UpdateVehicle(ctx context.Context, tx *sql.Tx, vehicleData EditVehicleRequestBody) (Vehicle, error) {
 	executer := vr.initiateQueryExecuter(tx)
 
 	var vehicle Vehicle
@@ -149,8 +147,7 @@ func (vr *vehicleRepository) UpdateVehicle(ctx context.Context, tx *sql.Tx, vehi
 		vehicleData.City,
 		vehicleData.PinCode,
 		vehicleData.CancellationAllowed,
-		vehicleData.Available,
-		vehicleId,
+		vehicleData.Id,
 	).Scan(
 		&vehicle.Id,
 		&vehicle.Name,
@@ -195,27 +192,25 @@ func (vr *vehicleRepository) SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, 
 	return nil
 }
 
-func (vr *vehicleRepository) LinkVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageId, vehicleId int) (VehicleImage, error) {
+func (vr *vehicleRepository) CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageData CreateVehicleImageData) (VehicleImage, error) {
 	executer := vr.initiateQueryExecuter(tx)
 
 	var vehicleImage VehicleImage
 	err := executer.QueryRowContext(
 		ctx,
-		linkVehicleImageQuery,
-		vehicleId,
-		vehicleImageId,
+		createVehicleImageQuery,
+		vehicleImageData.VehicleId,
+		vehicleImageData.Url,
+		vehicleImageData.Featured,
 	).Scan(
 		&vehicleImage.Id,
 		&vehicleImage.VehicleId,
 		&vehicleImage.Url,
+		&vehicleImage.Featured,
 		&vehicleImage.CreatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			slog.Error("no image found to link", "error", err)
-			return VehicleImage{}, apperrors.ErrInvalidImageToLink
-		}
-		slog.Error("failed to link image to vehicle", "error", err)
+		slog.Error("failed to create vehicle image", "error", err)
 		return VehicleImage{}, apperrors.ErrInternalServer
 	}
 

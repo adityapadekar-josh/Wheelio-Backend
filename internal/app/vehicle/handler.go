@@ -14,7 +14,7 @@ func CreateVehicle(vehicleService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var requestBody VehicleWithImages
+		var requestBody VehicleRequestBody
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
@@ -38,14 +38,14 @@ func UpdateVehicle(vehicleService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vehicleId := r.PathValue("id")
-		parseVehicleId, err := strconv.ParseInt(vehicleId, 10, 64)
+		parseVehicleId, err := strconv.Atoi(vehicleId)
 		if err != nil {
 			slog.Error("invalid vehicle id", "error", err)
 			response.WriteJson(w, http.StatusBadRequest, "invalid vehicle id", nil)
 			return
 		}
 
-		var requestBody VehicleWithImages
+		var requestBody VehicleRequestBody
 		err = json.NewDecoder(r.Body).Decode(&requestBody)
 		if err != nil {
 			slog.Error(apperrors.ErrFailedMarshal.Error(), "error", err)
@@ -53,7 +53,7 @@ func UpdateVehicle(vehicleService Service) http.HandlerFunc {
 			return
 		}
 
-		vehicleData, err := vehicleService.UpdateVehicle(ctx, requestBody, int(parseVehicleId))
+		vehicleData, err := vehicleService.UpdateVehicle(ctx, requestBody, parseVehicleId)
 		if err != nil {
 			slog.Error("failed to update vehicle", "error", err)
 			status, errorMessage := apperrors.MapError(err)
@@ -69,14 +69,14 @@ func SoftDeleteVehicle(vehicleService Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		vehicleId := r.PathValue("id")
-		parseVehicleId, err := strconv.ParseInt(vehicleId, 10, 64)
+		parseVehicleId, err := strconv.Atoi(vehicleId)
 		if err != nil {
 			slog.Error("invalid vehicle id", "error", err)
 			response.WriteJson(w, http.StatusBadRequest, "invalid vehicle id", nil)
 			return
 		}
 
-		err = vehicleService.SoftDeleteVehicle(ctx, int(parseVehicleId))
+		err = vehicleService.SoftDeleteVehicle(ctx, parseVehicleId)
 		if err != nil {
 			slog.Error("failed to soft delete vehicle", "error", err)
 			status, errorMessage := apperrors.MapError(err)
@@ -85,5 +85,26 @@ func SoftDeleteVehicle(vehicleService Service) http.HandlerFunc {
 		}
 
 		response.WriteJson(w, http.StatusOK, "vehicle deleted successfully", nil)
+	}
+}
+
+func GenerateSignedVehicleImageUploadURL(vehicleService Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		mimetype := r.URL.Query().Get("mimetype")
+
+		signedUrl, accessUrl, err := vehicleService.GenerateSignedVehicleImageUploadURL(ctx, mimetype)
+		if err != nil {
+			slog.Error("failed to generate signed url for vehicle image upload", "error", err)
+			status, errorMessage := apperrors.MapError(err)
+			response.WriteJson(w, status, errorMessage, nil)
+			return
+		}
+
+		signedUrlResponse := GenerateSignedURLResponseBody{
+			SignedUrl: signedUrl,
+			AccessUrl: accessUrl,
+		}
+		response.WriteJson(w, http.StatusOK, "signed url generated successfully", signedUrlResponse)
 	}
 }
