@@ -3,6 +3,8 @@ package vehicle
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -75,6 +77,37 @@ type VehicleRequestBody struct {
 type GenerateSignedURLResponseBody struct {
 	SignedUrl string `json:"signedUrl"`
 	AccessUrl string `json:"accessUrl"`
+}
+
+type VehicleOverview struct {
+	Id               int     `json:"id"`
+	Name             string  `json:"name"`
+	FuelType         string  `json:"fuelType"`
+	SeatCount        int     `json:"seatCount"`
+	TransmissionType string  `json:"transmissionType"`
+	Image            string  `json:"image"`
+	RatePerHour      float64 `json:"ratePerHour"`
+	Address          string  `json:"address"`
+	PinCode          int     `json:"pinCode"`
+}
+
+type PaginationParams struct {
+	Page       int `json:"page"`
+	PageSize   int `json:"pageSize"`
+	TotalCount int `json:"totalCount"`
+}
+
+type PaginatedData[T any] struct {
+	Data       T                `json:"data"`
+	Pagination PaginationParams `json:"pagination"`
+}
+
+type GetVehiclesParams struct {
+	City             string
+	PickupTimestamp  time.Time
+	DropoffTimestamp time.Time
+	Page             int
+	Limit            int
 }
 
 func (v VehicleRequestBody) validate() error {
@@ -212,4 +245,49 @@ func mapVehicleRepoAndVehicleImageRepoToVehicle(vehicle repository.Vehicle, imag
 	}
 
 	return mappedVehicle
+}
+
+func parseQueryParamToInt(r *http.Request, param string, defaultValue int) (int, error) {
+	query := r.URL.Query().Get(param)
+	if query == "" {
+		return defaultValue, nil
+	}
+
+	value, err := strconv.Atoi(query)
+	if err != nil {
+		return 0, err
+	}
+	return value, nil
+}
+
+func parsePickupDropoffTimeStamp(r *http.Request) (time.Time, time.Time, error) {
+	pickupQuery := r.URL.Query().Get("pickup")
+	dropoffQuery := r.URL.Query().Get("dropoff")
+
+	if (pickupQuery == "" && dropoffQuery != "") || (pickupQuery != "" && dropoffQuery == "") {
+		return time.Time{}, time.Time{}, fmt.Errorf("Invalid query parameters: Pickup and dropoff must both be provided or both omitted")
+	}
+
+	pickup, dropoff := time.Now().UTC(), time.Now().UTC()
+	timestampLayout := time.RFC3339Nano
+	var err error
+
+	if pickupQuery != "" {
+		pickup, err = time.Parse(timestampLayout, pickupQuery)
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse pickup time: %w", err)
+		}
+	}
+
+	if dropoffQuery != "" {
+		dropoff, err = time.Parse(timestampLayout, dropoffQuery)
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse dropoff time: %w", err)
+		}
+	}
+
+	pickup = time.Date(pickup.Year(), pickup.Month(), pickup.Day(), 0, 0, 0, 0, pickup.Location()).UTC()
+	dropoff = time.Date(dropoff.Year(), dropoff.Month(), dropoff.Day(), 23, 59, 59, 999999, dropoff.Location()).UTC()
+
+	return pickup, dropoff, nil
 }
