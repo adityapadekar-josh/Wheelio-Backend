@@ -16,7 +16,7 @@ type Dependencies struct {
 	VehicleService vehicle.Service
 }
 
-func NewServices(db *sql.DB, firebaseBucket *storage.BucketHandle) Dependencies {
+func InitDependencies(db *sql.DB, firebaseBucket *storage.BucketHandle) Dependencies {
 	userRepository := repository.NewUserRepository(db)
 	vehicleRepository := repository.NewVehicleRepository(db)
 

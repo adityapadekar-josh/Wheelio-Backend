@@ -36,9 +36,9 @@ func main() {
 		return
 	}
 
-	services := app.NewServices(db, firebaseBucket)
+	dependencies := app.InitDependencies(db, firebaseBucket)
 
-	router := app.NewRouter(services)
+	router := app.NewRouter(dependencies)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.HTTPServer.Port),
