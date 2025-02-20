@@ -20,6 +20,12 @@ type VehicleRepository interface {
 	SoftDeleteVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
 	CreateVehicleImage(ctx context.Context, tx *sql.Tx, vehicleImageData CreateVehicleImageData) (VehicleImage, error)
 	DeleteAllImagesForVehicle(ctx context.Context, tx *sql.Tx, vehicleId int) error
+	GetVehicleById(ctx context.Context, tx *sql.Tx, vehicleId int) (Vehicle, error)
+	GetVehicleImagesByVehicleId(ctx context.Context, tx *sql.Tx, vehicleId int) ([]VehicleImage, error)
+	GetVehicles(ctx context.Context, tx *sql.Tx, params GetVehiclesParams) ([]VehicleOverview, error)
+	GetTotalVehicles(ctx context.Context, tx *sql.Tx, params GetVehiclesParams) (int, error)
+	GetVehiclesForHost(ctx context.Context, tx *sql.Tx, params GetVehiclesForHostParams) ([]VehicleOverview, error)
+	GetTotalVehiclesForHost(ctx context.Context, tx *sql.Tx, hostId int) (int, error)
 }
 
 func NewVehicleRepository(db *sql.DB) VehicleRepository {
@@ -78,6 +84,96 @@ const (
 	RETURNING *;`
 
 	deleteAllImagesForVehicleQuery = "DELETE FROM vehicle_images WHERE vehicle_id=$1"
+
+	getVehicleByIdQuery = "SELECT * FROM vehicles WHERE id=$1"
+
+	getVehicleImagesByVehicleIdQuery = "SELECT * FROM vehicle_images WHERE vehicle_id=$1"
+
+	getVehiclesQuery = `
+	SELECT 
+		v.id,
+		v.name,
+		v.fuel_type,
+		v.seat_count,
+		v.transmission_type,
+		COALESCE((
+				SELECT vi.url
+				FROM vehicle_images vi
+				WHERE vi.vehicle_id = v.id
+				AND vi.featured = true
+				LIMIT 1
+			), '') AS image,
+		v.rate_per_hour,
+		v.address,
+		v.pin_code
+	FROM vehicles v
+	WHERE 
+		v.city ILIKE $1 AND
+		v.is_deleted = false AND 
+		v.available = true AND
+			NOT EXISTS (
+			SELECT 1
+			FROM bookings AS b
+			WHERE
+				v.id = b.vehicle_id AND
+				b.status NOT IN ('RETURNED', 'CANCELLED') AND
+				(
+					(b.scheduled_pickup_time <= $2 AND $2 <= b.scheduled_dropoff_time) OR
+					(b.scheduled_pickup_time <= $3 AND $3 <= b.scheduled_dropoff_time) OR
+					($2 <= b.scheduled_pickup_time AND b.scheduled_dropoff_time <= $3) 
+				)
+			)
+	OFFSET $4
+	LIMIT $5;`
+
+	getTotalVehiclesQuery = `
+	SELECT 
+		COUNT (*)
+	FROM vehicles v
+	WHERE 
+		v.city ILIKE $1 AND
+		v.is_deleted = false AND 
+		v.available = true AND
+			NOT EXISTS (
+			SELECT 1
+			FROM bookings AS b
+			WHERE
+				v.id = b.vehicle_id AND
+				b.status NOT IN ('RETURNED', 'CANCELLED') AND
+				(
+					(b.scheduled_pickup_time <= $2 AND $2 <= b.scheduled_dropoff_time) OR
+					(b.scheduled_pickup_time <= $3 AND $3 <= b.scheduled_dropoff_time) OR
+					($2 <= b.scheduled_pickup_time AND b.scheduled_dropoff_time <= $3) 
+				)
+			);`
+
+	getVehiclesForHostQuery = `
+	SELECT 
+		v.id,
+		v.name,
+		v.fuel_type,
+		v.seat_count,
+		v.transmission_type,
+		COALESCE((
+				SELECT vi.url
+				FROM vehicle_images vi
+				WHERE vi.vehicle_id = v.id
+				AND vi.featured = true
+				LIMIT 1
+			), '') AS image,
+		v.rate_per_hour,
+		v.address,
+		v.pin_code
+	FROM vehicles v
+	WHERE host_id=$1
+	OFFSET $2
+	LIMIT $3;`
+
+	getTotalVehiclesForHostQuery = `
+	SELECT 
+		COUNT (*)
+	FROM vehicles v
+	WHERE host_id=$1;`
 )
 
 func (vr *vehicleRepository) CreateVehicle(ctx context.Context, tx *sql.Tx, vehicleData CreateVehicleRequestBody) (Vehicle, error) {
@@ -227,4 +323,201 @@ func (vr *vehicleRepository) DeleteAllImagesForVehicle(ctx context.Context, tx *
 	}
 
 	return nil
+}
+
+func (vr *vehicleRepository) GetVehicleById(ctx context.Context, tx *sql.Tx, vehicleId int) (Vehicle, error) {
+	executer := vr.initiateQueryExecuter(tx)
+
+	var vehicle Vehicle
+	err := executer.QueryRowContext(
+		ctx,
+		getVehicleByIdQuery,
+		vehicleId,
+	).Scan(
+		&vehicle.Id,
+		&vehicle.Name,
+		&vehicle.FuelType,
+		&vehicle.SeatCount,
+		&vehicle.TransmissionType,
+		&vehicle.Features,
+		&vehicle.RatePerHour,
+		&vehicle.OverdueFeeRatePerHour,
+		&vehicle.Address,
+		&vehicle.State,
+		&vehicle.City,
+		&vehicle.PinCode,
+		&vehicle.CancellationAllowed,
+		&vehicle.Available,
+		&vehicle.HostId,
+		&vehicle.IsDeleted,
+		&vehicle.CreatedAt,
+		&vehicle.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Error("no vehicle found", "error", err)
+			return Vehicle{}, apperrors.ErrVehicleNotFound
+		}
+		slog.Error("failed to get vehicle", "error", err)
+		return Vehicle{}, apperrors.ErrInternalServer
+	}
+
+	return vehicle, nil
+}
+
+func (vr *vehicleRepository) GetVehicleImagesByVehicleId(ctx context.Context, tx *sql.Tx, vehicleId int) ([]VehicleImage, error) {
+	executer := vr.initiateQueryExecuter(tx)
+
+	var vehicleImages []VehicleImage
+	rows, err := executer.QueryContext(ctx, getVehicleImagesByVehicleIdQuery, vehicleId)
+	if err != nil {
+		slog.Error("failed to get vehicle images", "error", err)
+		return []VehicleImage{}, apperrors.ErrInternalServer
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var vehicleImage VehicleImage
+		err = rows.Scan(&vehicleImage.Id, &vehicleImage.VehicleId, &vehicleImage.Url, &vehicleImage.Featured, &vehicleImage.CreatedAt)
+		if err != nil {
+			slog.Error("failed to scan vehicle image from rows", "error", err)
+			return []VehicleImage{}, apperrors.ErrInternalServer
+		}
+		vehicleImages = append(vehicleImages, vehicleImage)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		slog.Error("failed iterate over vehicle image rows", "error", err)
+		return []VehicleImage{}, apperrors.ErrInternalServer
+	}
+	return vehicleImages, nil
+}
+
+func (vr *vehicleRepository) GetVehicles(ctx context.Context, tx *sql.Tx, params GetVehiclesParams) ([]VehicleOverview, error) {
+	executer := vr.initiateQueryExecuter(tx)
+
+	var vehicles []VehicleOverview
+	rows, err := executer.QueryContext(
+		ctx,
+		getVehiclesQuery,
+		params.City,
+		params.PickupTimestamp,
+		params.DropoffTimestamp,
+		params.Offset,
+		params.Limit,
+	)
+	if err != nil {
+		slog.Error("failed to get vehicles", "error", err)
+		return []VehicleOverview{}, apperrors.ErrInternalServer
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var vehicleData VehicleOverview
+		err = rows.Scan(
+			&vehicleData.Id,
+			&vehicleData.Name,
+			&vehicleData.FuelType,
+			&vehicleData.SeatCount,
+			&vehicleData.TransmissionType,
+			&vehicleData.Image,
+			&vehicleData.RatePerHour,
+			&vehicleData.Address,
+			&vehicleData.PinCode,
+		)
+		if err != nil {
+			slog.Error("failed to scan vehicle overview from rows", "error", err)
+			return []VehicleOverview{}, apperrors.ErrInternalServer
+		}
+		vehicles = append(vehicles, vehicleData)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		slog.Error("failed iterate over vehicle overview rows", "error", err)
+		return []VehicleOverview{}, apperrors.ErrInternalServer
+	}
+	return vehicles, nil
+}
+
+func (vr *vehicleRepository) GetTotalVehicles(ctx context.Context, tx *sql.Tx, params GetVehiclesParams) (int, error) {
+	executer := vr.initiateQueryExecuter(tx)
+
+	var totalVehicles int
+	err := executer.QueryRowContext(
+		ctx,
+		getTotalVehiclesQuery,
+		params.City,
+		params.PickupTimestamp,
+		params.DropoffTimestamp,
+	).Scan(&totalVehicles)
+	if err != nil {
+		slog.Error("failed to get total vehicle count", "error", err)
+		return 0, apperrors.ErrInternalServer
+	}
+
+	return totalVehicles, nil
+}
+
+func (vr *vehicleRepository) GetVehiclesForHost(ctx context.Context, tx *sql.Tx, params GetVehiclesForHostParams) ([]VehicleOverview, error) {
+	executer := vr.initiateQueryExecuter(tx)
+
+	var vehicles []VehicleOverview
+	rows, err := executer.QueryContext(
+		ctx,
+		getVehiclesForHostQuery,
+		params.HostId,
+		params.Offset,
+		params.Limit,
+	)
+	if err != nil {
+		slog.Error("failed to get vehicles for host", "error", err)
+		return []VehicleOverview{}, apperrors.ErrInternalServer
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var vehicleData VehicleOverview
+		err = rows.Scan(
+			&vehicleData.Id,
+			&vehicleData.Name,
+			&vehicleData.FuelType,
+			&vehicleData.SeatCount,
+			&vehicleData.TransmissionType,
+			&vehicleData.Image,
+			&vehicleData.RatePerHour,
+			&vehicleData.Address,
+			&vehicleData.PinCode,
+		)
+		if err != nil {
+			slog.Error("failed to scan vehicle overview from rows for host", "error", err)
+			return []VehicleOverview{}, apperrors.ErrInternalServer
+		}
+		vehicles = append(vehicles, vehicleData)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		slog.Error("failed iterate over vehicle overview rows for host", "error", err)
+		return []VehicleOverview{}, apperrors.ErrInternalServer
+	}
+	return vehicles, nil
+}
+
+func (vr *vehicleRepository) GetTotalVehiclesForHost(ctx context.Context, tx *sql.Tx, hostId int) (int, error) {
+	executer := vr.initiateQueryExecuter(tx)
+
+	var totalVehicles int
+	err := executer.QueryRowContext(
+		ctx,
+		getTotalVehiclesForHostQuery,
+		hostId,
+	).Scan(&totalVehicles)
+	if err != nil {
+		slog.Error("failed to get total vehicle count for host", "error", err)
+		return 0, apperrors.ErrInternalServer
+	}
+
+	return totalVehicles, nil
 }

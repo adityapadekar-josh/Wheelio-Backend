@@ -99,3 +99,29 @@ type CreateVehicleImageData struct {
 	Url       string
 	Featured  bool
 }
+
+type VehicleOverview struct {
+	Id               int
+	Name             string
+	FuelType         string
+	SeatCount        int
+	TransmissionType string
+	Image            string
+	RatePerHour      float64
+	Address          string
+	PinCode          int
+}
+
+type GetVehiclesParams struct {
+	City             string
+	PickupTimestamp  time.Time
+	DropoffTimestamp time.Time
+	Offset           int
+	Limit            int
+}
+
+type GetVehiclesForHostParams struct {
+	HostId int
+	Offset int
+	Limit  int
+}

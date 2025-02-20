@@ -108,3 +108,107 @@ func GenerateSignedVehicleImageUploadURL(vehicleService Service) http.HandlerFun
 		response.WriteJson(w, http.StatusOK, "signed url generated successfully", signedUrlResponse)
 	}
 }
+
+func GetVehicleById(vehicleService Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		vehicleId := r.PathValue("id")
+		parseVehicleId, err := strconv.ParseInt(vehicleId, 10, 64)
+		if err != nil {
+			slog.Error("invalid vehicle id", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, "invalid vehicle id", nil)
+			return
+		}
+
+		vehicle, err := vehicleService.GetVehicleById(ctx, int(parseVehicleId))
+		if err != nil {
+			slog.Error("failed to fetch vehicle", "error", err)
+			status, errorMessage := apperrors.MapError(err)
+			response.WriteJson(w, status, errorMessage, nil)
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, "vehicle fetched successfully", vehicle)
+	}
+}
+
+func GetVehicles(vehicleService Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		page, err := parseQueryParamToInt(r, "page", 1)
+		if err != nil {
+			slog.Error("failed to parse page number to int", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
+			return
+		}
+
+		limit, err := parseQueryParamToInt(r, "limit", 10)
+		if err != nil {
+			slog.Error("failed to parse page limit to int", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
+			return
+		}
+
+		city := r.URL.Query().Get("city")
+		if city == "" {
+			slog.Error("no city provided in query", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
+			return
+		}
+
+		pickup, dropoff, err := parsePickupDropoffTimeStamp(r)
+		if err != nil {
+			slog.Error("failed to pickup/dropoff timestamp", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
+			return
+		}
+
+		params := GetVehiclesParams{
+			City:             city,
+			PickupTimestamp:  pickup,
+			DropoffTimestamp: dropoff,
+			Page:             page,
+			Limit:            limit,
+		}
+		vehicles, err := vehicleService.GetVehicles(ctx, params)
+		if err != nil {
+			slog.Error("failed to fetch vehicles", "error", err)
+			status, errorMessage := apperrors.MapError(err)
+			response.WriteJson(w, status, errorMessage, nil)
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, "vehicles fetched successfully", vehicles)
+	}
+}
+
+func GetVehiclesForHost(vehicleService Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		page, err := parseQueryParamToInt(r, "page", 1)
+		if err != nil {
+			slog.Error("failed to parse page number to int", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
+			return
+		}
+
+		limit, err := parseQueryParamToInt(r, "limit", 10)
+		if err != nil {
+			slog.Error("failed to parse page limit to int", "error", err)
+			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
+			return
+		}
+
+		vehicles, err := vehicleService.GetVehiclesForHost(ctx, int(page), int(limit))
+		if err != nil {
+			slog.Error("failed to fetch vehicles", "error", err)
+			status, errorMessage := apperrors.MapError(err)
+			response.WriteJson(w, status, errorMessage, nil)
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, "vehicles fetched successfully", vehicles)
+	}
+}

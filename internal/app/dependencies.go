@@ -23,7 +23,7 @@ func InitDependencies(db *sql.DB, firebaseBucket *storage.BucketHandle) Dependen
 	emailService := email.NewService()
 	firebaseService := firebase.NewService(firebaseBucket)
 	userService := user.NewService(userRepository, emailService)
-	vehicleService := vehicle.NewService(vehicleRepository,firebaseService)
+	vehicleService := vehicle.NewService(vehicleRepository, firebaseService)
 
 	return Dependencies{
 		UserService:    userService,

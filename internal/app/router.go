@@ -68,6 +68,22 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 			middleware.AuthenticationMiddleware,
 		),
 	)
+	router.HandleFunc(
+		"GET /api/v1/vehicles/{id}",
+		vehicle.GetVehicleById(deps.VehicleService),
+	)
+	router.HandleFunc(
+		"GET /api/v1/vehicles",
+		vehicle.GetVehicles(deps.VehicleService),
+	)
+	router.HandleFunc(
+		"GET /api/v1/vehicles/host",
+		middleware.ChainMiddleware(
+			vehicle.GetVehiclesForHost(deps.VehicleService),
+			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
 
 	return router
 }

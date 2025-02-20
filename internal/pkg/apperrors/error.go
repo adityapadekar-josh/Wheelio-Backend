@@ -8,6 +8,7 @@ import (
 var (
 	ErrInternalServer     = errors.New("an unexpected error occurred. please try again later")
 	ErrInvalidRequestBody = errors.New("invalid or missing parameters in the request body")
+	ErrInvalidQueryParams = errors.New("invalid or missing query parameters")
 	ErrFailedMarshal      = errors.New("failed to parse request body")
 
 	ErrUnauthorizedAccess = errors.New("unauthorized. please provide a valid access token")
@@ -24,13 +25,15 @@ var (
 
 	ErrEmailSendFailed = errors.New("failed to send email")
 
-	ErrInvalidImageToLink = errors.New("no image found to link")
-	ErrVehicleNotFound    = errors.New("vehicle not found")
+	ErrInvalidImageToLink   = errors.New("no image found to link")
+	ErrVehicleNotFound      = errors.New("vehicle not found")
+	ErrInvalidPickupDropoff = errors.New("pickup timestamp cannot be after dropoff timestamp")
+	ErrInvalidPagination    = errors.New("page and limit must be greater than zero")
 )
 
 func MapError(err error) (statusCode int, errMessage string) {
 	switch err {
-	case ErrInvalidRequestBody:
+	case ErrInvalidRequestBody, ErrInvalidQueryParams, ErrInvalidPickupDropoff, ErrInvalidPagination:
 		return http.StatusBadRequest, err.Error()
 	case ErrInvalidLoginCredentials, ErrUnauthorizedAccess:
 		return http.StatusUnauthorized, err.Error()
