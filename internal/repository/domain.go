@@ -125,3 +125,41 @@ type GetVehiclesForHostParams struct {
 	Offset int
 	Limit  int
 }
+
+type Booking struct {
+	Id                    int
+	VehicleId             int
+	HostId                int
+	SeekerId              int
+	Status                string
+	PickupLocation        string
+	DropoffLocation       string
+	BookingAmount         float64
+	OverdueFeeRatePerHour float64
+	ActualPickupTime      *time.Time
+	ActualDropoffTime     *time.Time
+	ScheduledPickupTime   time.Time
+	ScheduledDropoffTime  time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+type CreateBookingRequestBody struct {
+	VehicleId             int
+	HostId                int
+	SeekerId              int
+	Status                string
+	PickupLocation        string
+	DropoffLocation       string
+	BookingAmount         float64
+	OverdueFeeRatePerHour float64
+	ScheduledPickupTime   time.Time
+	ScheduledDropoffTime  time.Time
+}
+
+type OtpToken struct {
+	Id        int
+	BookingId int
+	Otp       string
+	ExpiresAt time.Time
+}
