@@ -97,8 +97,8 @@ type PaginationParams struct {
 	TotalCount int `json:"totalCount"`
 }
 
-type PaginatedData[T any] struct {
-	Data       T                `json:"data"`
+type PaginatedVehicleOverview struct {
+	Data       []VehicleOverview  `json:"data"`
 	Pagination PaginationParams `json:"pagination"`
 }
 

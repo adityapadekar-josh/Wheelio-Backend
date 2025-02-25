@@ -25,8 +25,8 @@ type Service interface {
 	SoftDeleteVehicle(ctx context.Context, vehicleId int) (err error)
 	GenerateSignedVehicleImageUploadURL(ctx context.Context, mimetype string) (signedUrl, accessUrl string, err error)
 	GetVehicleById(ctx context.Context, vehicleId int) (vehicle Vehicle, err error)
-	GetVehicles(ctx context.Context, params GetVehiclesParams) (vehicles PaginatedData[[]VehicleOverview], err error)
-	GetVehiclesForHost(ctx context.Context, page, limit int) (vehicles PaginatedData[[]VehicleOverview], err error)
+	GetVehicles(ctx context.Context, params GetVehiclesParams) (vehicles PaginatedVehicleOverview, err error)
+	GetVehiclesForHost(ctx context.Context, page, limit int) (vehicles PaginatedVehicleOverview, err error)
 }
 
 func NewService(vehicleRepository repository.VehicleRepository, firebaseService firebase.Service) Service {
@@ -196,20 +196,20 @@ func (s *service) GetVehicleById(ctx context.Context, vehicleId int) (vehicle Ve
 	return mapVehicleRepoAndVehicleImageRepoToVehicle(vehicleDetails, vehicleImages), nil
 }
 
-func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (vehicles PaginatedData[[]VehicleOverview], err error) {
+func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (vehicles PaginatedVehicleOverview, err error) {
 	if params.PickupTimestamp.After(params.DropoffTimestamp) {
 		slog.Error("pickup time after the dropoff time", "error", err)
-		return PaginatedData[[]VehicleOverview]{}, apperrors.ErrInvalidPickupDropoff
+		return PaginatedVehicleOverview{}, apperrors.ErrInvalidPickupDropoff
 	}
 
 	if params.Page <= 0 {
 		slog.Error("invalid page number provided", "page", params.Page)
-		return PaginatedData[[]VehicleOverview]{}, apperrors.ErrInvalidPagination
+		return PaginatedVehicleOverview{}, apperrors.ErrInvalidPagination
 	}
 
 	if params.Limit <= 0 {
 		slog.Error("invalid limit value provided", "limit", params.Limit)
-		return PaginatedData[[]VehicleOverview]{}, apperrors.ErrInvalidPagination
+		return PaginatedVehicleOverview{}, apperrors.ErrInvalidPagination
 	}
 
 	offset := params.Limit * (params.Page - 1)
@@ -221,10 +221,10 @@ func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (ve
 		Offset:           offset,
 		Limit:            params.Limit,
 	}
-	vehicleList, err := s.vehicleRepository.GetVehicles(ctx, nil, repoParams)
+	vehicleList, totalVehicles, err := s.vehicleRepository.GetVehicles(ctx, nil, repoParams)
 	if err != nil {
 		slog.Error("failed to get vehicle list", "error", err)
-		return PaginatedData[[]VehicleOverview]{}, err
+		return PaginatedVehicleOverview{}, err
 	}
 
 	vehicleData := make([]VehicleOverview, len(vehicleList))
@@ -232,13 +232,7 @@ func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (ve
 		vehicleData[i] = VehicleOverview(v)
 	}
 
-	totalVehicles, err := s.vehicleRepository.GetTotalVehicles(ctx, nil, repoParams)
-	if err != nil {
-		slog.Error("failed to get total vehicle count", "error", err)
-		return PaginatedData[[]VehicleOverview]{}, err
-	}
-
-	return PaginatedData[[]VehicleOverview]{
+	return PaginatedVehicleOverview{
 		Data: vehicleData,
 		Pagination: PaginationParams{
 			Page:       params.Page,
@@ -247,22 +241,22 @@ func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (ve
 		}}, nil
 }
 
-func (s *service) GetVehiclesForHost(ctx context.Context, page, limit int) (vehicles PaginatedData[[]VehicleOverview], err error) {
+func (s *service) GetVehiclesForHost(ctx context.Context, page, limit int) (vehicles PaginatedVehicleOverview, err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
 
 	if !ok {
 		slog.Error("failed to retrieve user id from context")
-		return PaginatedData[[]VehicleOverview]{}, apperrors.ErrInternalServer
+		return PaginatedVehicleOverview{}, apperrors.ErrInternalServer
 	}
 
 	if page <= 0 {
 		slog.Error("invalid page number provided", "page", page)
-		return PaginatedData[[]VehicleOverview]{}, apperrors.ErrInvalidPagination
+		return PaginatedVehicleOverview{}, apperrors.ErrInvalidPagination
 	}
 
 	if limit <= 0 {
 		slog.Error("invalid limit value provided", "limit", limit)
-		return PaginatedData[[]VehicleOverview]{}, apperrors.ErrInvalidPagination
+		return PaginatedVehicleOverview{}, apperrors.ErrInvalidPagination
 	}
 
 	offset := limit * (page - 1)
@@ -272,10 +266,10 @@ func (s *service) GetVehiclesForHost(ctx context.Context, page, limit int) (vehi
 		Offset: offset,
 		Limit:  limit,
 	}
-	vehicleList, err := s.vehicleRepository.GetVehiclesForHost(ctx, nil, repoParams)
+	vehicleList, totalVehicles, err := s.vehicleRepository.GetVehiclesForHost(ctx, nil, repoParams)
 	if err != nil {
 		slog.Error("failed to get vehicle list for host", "error", err)
-		return PaginatedData[[]VehicleOverview]{}, err
+		return PaginatedVehicleOverview{}, err
 	}
 
 	vehicleData := make([]VehicleOverview, len(vehicleList))
@@ -283,13 +277,7 @@ func (s *service) GetVehiclesForHost(ctx context.Context, page, limit int) (vehi
 		vehicleData[i] = VehicleOverview(v)
 	}
 
-	totalVehicles, err := s.vehicleRepository.GetTotalVehiclesForHost(ctx, nil, userId)
-	if err != nil {
-		slog.Error("failed to get total vehicle count for host", "error", err)
-		return PaginatedData[[]VehicleOverview]{}, err
-	}
-
-	return PaginatedData[[]VehicleOverview]{
+	return PaginatedVehicleOverview{
 		Data: vehicleData,
 		Pagination: PaginationParams{
 			Page:       page,
