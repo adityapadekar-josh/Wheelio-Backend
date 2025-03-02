@@ -121,8 +121,6 @@ func (s *service) CreateBooking(ctx context.Context, bookingData CreateBookingRe
 		return Booking{}, err
 	}
 
-	fmt.Println("booking", booking)
-
 	otp, err := cryptokit.GenerateOTP()
 	if err != nil {
 		slog.Error("failed to generate secure otp", "error", err)
