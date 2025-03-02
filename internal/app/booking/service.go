@@ -58,7 +58,7 @@ func (s *service) CreateBooking(ctx context.Context, bookingData CreateBookingRe
 	}
 
 	if vehicle.IsDeleted {
-		slog.Error("vehicle is delted thus cannot create booking")
+		slog.Error("vehicle is deleted thus cannot create booking")
 		return Booking{}, apperrors.ErrVehicleNotFound
 	}
 
@@ -120,6 +120,8 @@ func (s *service) CreateBooking(ctx context.Context, bookingData CreateBookingRe
 		slog.Error("failed to create booking", "error", err)
 		return Booking{}, err
 	}
+
+	fmt.Println("booking", booking)
 
 	otp, err := cryptokit.GenerateOTP()
 	if err != nil {

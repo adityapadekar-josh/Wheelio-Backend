@@ -3,8 +3,8 @@ package cryptokit
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
@@ -81,7 +81,7 @@ func GenerateOTP() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		otp += fmt.Sprintf("%d", num.Int64())
+		otp += strconv.Itoa(int(num.Int64()))
 	}
 	return otp, nil
 }
