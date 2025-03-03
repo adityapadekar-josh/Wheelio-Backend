@@ -20,9 +20,15 @@ type Service interface {
 }
 
 func NewService(bucket *storage.BucketHandle) Service {
-	return &service{
+	svc := &service{
 		bucket: bucket,
 	}
+
+	if err := svc.ConfigureCORS(); err != nil {
+		slog.Warn("failed to configure CORS, uploads may not work from browser", "error", err)
+	}
+
+	return svc
 }
 
 func InitFirebaseStorage(ctx context.Context, cfg config.Config) (*storage.BucketHandle, error) {
@@ -55,6 +61,10 @@ func (s *service) GenerateSignedURL(ctx context.Context, objectPath string, cont
 		Method:      "PUT",
 		ContentType: contentType,
 		Expires:     time.Now().Add(expires),
+		Headers: []string{
+			"Access-Control-Allow-Origin: *",
+			"Access-Control-Allow-Methods: PUT, POST, GET, HEAD, DELETE, OPTIONS",
+		},
 	}
 
 	url, err := s.bucket.SignedURL(objectPath, opts)
@@ -64,4 +74,26 @@ func (s *service) GenerateSignedURL(ctx context.Context, objectPath string, cont
 	}
 
 	return url, nil
+}
+
+func (s *service) ConfigureCORS() error {
+	ctx := context.Background()
+
+	cors := []storage.CORS{
+		{
+			MaxAge:          3600,
+			Methods:         []string{"PUT", "POST", "GET", "HEAD", "DELETE", "OPTIONS"},
+			Origins:         []string{"*"},
+			ResponseHeaders: []string{"Content-Type", "x-goog-meta-*"},
+		},
+	}
+
+	if _, err := s.bucket.Update(ctx, storage.BucketAttrsToUpdate{
+		CORS: cors,
+	}); err != nil {
+		slog.Error("failed to set CORS configuration", "error", err)
+		return err
+	}
+
+	return nil
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
 )
 
-func NewRouter(deps Dependencies) *http.ServeMux {
+func NewRouter(deps Dependencies) http.Handler {
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /api/v1/health", func(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +63,7 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 		),
 	)
 	router.HandleFunc(
-		"GET /api/v1/vehicles/image/upload/signed-url",
+		"POST /api/v1/vehicles/image/upload/signed-url",
 		middleware.ChainMiddleware(
 			vehicle.GenerateSignedVehicleImageUploadURL(deps.VehicleService),
 			middleware.AuthenticationMiddleware,
@@ -102,5 +102,5 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 		),
 	)
 
-	return router
+	return middleware.CorsMiddleware(router)
 }
