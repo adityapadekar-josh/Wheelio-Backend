@@ -102,21 +102,5 @@ func NewRouter(deps Dependencies) http.Handler {
 		),
 	)
 
-	router.HandleFunc(
-		"POST /api/v1/bookings",
-		middleware.ChainMiddleware(
-			booking.CreateBooking(deps.BookingService),
-			middleware.AuthorizationMiddleware(user.Seeker),
-			middleware.AuthenticationMiddleware,
-		),
-	)
-	router.HandleFunc(
-		"PATCH /api/v1/bookings/{id}/cancel",
-		middleware.ChainMiddleware(
-			booking.CancelBooking(deps.BookingService),
-			middleware.AuthenticationMiddleware,
-		),
-	)
-
 	return middleware.CorsMiddleware(router)
 }
