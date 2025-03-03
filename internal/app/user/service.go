@@ -28,6 +28,7 @@ type Service interface {
 	ResetPassword(ctx context.Context, resetPasswordDetails ResetPasswordRequestBody) (err error)
 	GetLoggedInUser(ctx context.Context) (user User, err error)
 	UpgradeUserRoleToHost(ctx context.Context) (err error)
+	GetUserById(ctx context.Context, userId int) (user User, err error)
 }
 
 func NewService(userRepository repository.UserRepository, emailService email.Service) Service {
@@ -272,4 +273,14 @@ func (s *service) UpgradeUserRoleToHost(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+func (s *service) GetUserById(ctx context.Context, userId int) (user User, err error) {
+	userData, err := s.userRepository.GetUserById(ctx, nil, userId)
+	if err != nil {
+		slog.Error("failed to get user by id", "error", err)
+		return User{}, err
+	}
+
+	return User(userData), nil
 }

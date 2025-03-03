@@ -3,6 +3,8 @@ package cryptokit
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"math/big"
+	"strconv"
 
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
@@ -70,4 +72,16 @@ func VerifyJWTToken(tokenString string) (jwt.MapClaims, error) {
 	}
 
 	return claims, nil
+}
+
+func GenerateOTP() (string, error) {
+	otp := ""
+	for i := 0; i < 6; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		otp += strconv.Itoa(int(num.Int64()))
+	}
+	return otp, nil
 }

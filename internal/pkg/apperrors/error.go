@@ -29,6 +29,8 @@ var (
 	ErrVehicleNotFound      = errors.New("vehicle not found")
 	ErrInvalidPickupDropoff = errors.New("pickup timestamp cannot be after dropoff timestamp")
 	ErrInvalidPagination    = errors.New("page and limit must be greater than zero")
+
+	ErrBookingConflict = errors.New("booking slot is not available for the selected time range")
 )
 
 func MapError(err error) (statusCode int, errMessage string) {
@@ -41,7 +43,7 @@ func MapError(err error) (statusCode int, errMessage string) {
 		return http.StatusForbidden, err.Error()
 	case ErrUserNotFound, ErrVehicleNotFound:
 		return http.StatusNotFound, err.Error()
-	case ErrEmailAlreadyRegistered, ErrUserNotVerified:
+	case ErrEmailAlreadyRegistered, ErrUserNotVerified, ErrBookingConflict:
 		return http.StatusConflict, err.Error()
 	case ErrInvalidToken:
 		return http.StatusUnprocessableEntity, err.Error()

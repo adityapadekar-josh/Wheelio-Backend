@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/booking"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/user"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/app/vehicle"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/middleware"
@@ -81,6 +82,22 @@ func NewRouter(deps Dependencies) *http.ServeMux {
 		middleware.ChainMiddleware(
 			vehicle.GetVehiclesForHost(deps.VehicleService),
 			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+
+	router.HandleFunc(
+		"POST /api/v1/bookings",
+		middleware.ChainMiddleware(
+			booking.CreateBooking(deps.BookingService),
+			middleware.AuthorizationMiddleware(user.Seeker),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"PATCH /api/v1/bookings/{id}/cancel",
+		middleware.ChainMiddleware(
+			booking.CancelBooking(deps.BookingService),
 			middleware.AuthenticationMiddleware,
 		),
 	)
