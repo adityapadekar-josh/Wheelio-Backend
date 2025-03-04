@@ -243,7 +243,6 @@ func (s *service) ResetPassword(ctx context.Context, resetPasswordDetails ResetP
 
 func (s *service) GetLoggedInUser(ctx context.Context) (user User, err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
-
 	if !ok {
 		slog.Error("failed to retrieve user id from context")
 		return User{}, apperrors.ErrInternalServer
@@ -260,7 +259,6 @@ func (s *service) GetLoggedInUser(ctx context.Context) (user User, err error) {
 
 func (s *service) UpgradeUserRoleToHost(ctx context.Context) (err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
-
 	if !ok {
 		slog.Error("failed to retrieve user id from context")
 		return apperrors.ErrInternalServer

@@ -12,6 +12,7 @@ var (
 	ErrFailedMarshal      = errors.New("failed to parse request body")
 
 	ErrUnauthorizedAccess = errors.New("unauthorized. please provide a valid access token")
+	ErrActionForbidden    = errors.New("action forbidden")
 	ErrAccessForbidden    = errors.New("access forbidden")
 	ErrInvalidToken       = errors.New("invalid or expired token")
 
@@ -30,20 +31,25 @@ var (
 	ErrInvalidPickupDropoff = errors.New("pickup timestamp cannot be after dropoff timestamp")
 	ErrInvalidPagination    = errors.New("page and limit must be greater than zero")
 
-	ErrBookingConflict = errors.New("booking slot is not available for the selected time range")
+	ErrBookingConflict               = errors.New("booking slot is not available for the selected time range")
+	ErrInvalidOtp                    = errors.New("invalid opt")
+	ErrOptTokenNotFound              = errors.New("opt token not found")
+	ErrBookingNotFound               = errors.New("booking not found")
+	ErrBookingCancelled              = errors.New("cannot perform operations on cancelled booking")
+	ErrBookingCancellationNotAllowed = errors.New("cancellation is not allowed for this booking")
 )
 
 func MapError(err error) (statusCode int, errMessage string) {
 	switch err {
-	case ErrInvalidRequestBody, ErrInvalidQueryParams, ErrInvalidPickupDropoff, ErrInvalidPagination:
+	case ErrInvalidRequestBody, ErrInvalidQueryParams, ErrInvalidPickupDropoff, ErrInvalidPagination, ErrOptTokenNotFound, ErrBookingNotFound:
 		return http.StatusBadRequest, err.Error()
 	case ErrUnauthorizedAccess:
 		return http.StatusUnauthorized, err.Error()
-	case ErrAccessForbidden:
+	case ErrAccessForbidden, ErrActionForbidden, ErrBookingCancellationNotAllowed:
 		return http.StatusForbidden, err.Error()
 	case ErrUserNotFound, ErrVehicleNotFound:
 		return http.StatusNotFound, err.Error()
-	case ErrEmailAlreadyRegistered, ErrUserNotVerified, ErrBookingConflict:
+	case ErrEmailAlreadyRegistered, ErrUserNotVerified, ErrBookingConflict, ErrInvalidOtp, ErrBookingCancelled:
 		return http.StatusConflict, err.Error()
 	case ErrInvalidToken, ErrInvalidLoginCredentials:
 		return http.StatusUnprocessableEntity, err.Error()

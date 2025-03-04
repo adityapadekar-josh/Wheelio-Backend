@@ -152,7 +152,7 @@ func GetVehicles(vehicleService Service) http.HandlerFunc {
 
 		city := r.URL.Query().Get("city")
 		if city == "" {
-			slog.Error("no city provided in query", "error", err)
+			slog.Error("no city provided in query")
 			response.WriteJson(w, http.StatusBadRequest, apperrors.ErrInvalidQueryParams.Error(), nil)
 			return
 		}

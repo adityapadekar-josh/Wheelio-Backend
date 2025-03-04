@@ -2,8 +2,12 @@ package booking
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/repository"
 )
 
 const (
@@ -12,10 +16,14 @@ const (
 	CheckedOut = "CHECKED_OUT"
 	Returned   = "RETURNED"
 	Cancelled  = "CANCELLED"
+
+	// Tax rate
+	taxRate = 0.18
 )
 
 const (
-	checkoutOtpEmailContent = "Hello %s,\n\nThank you for choosing Wheelio! To proceed with your vehicle checkout, please provide the following OTP to the vehicle owner:\n\nOTP: %s\n\nThis OTP will expire on %s.\n\nEnsure you share this OTP with the owner before the expiration time to complete the rental process.\n\nBest regards,\nThe Wheelio Team"
+	checkoutOtpEmailContent       = "Hello %s,\n\nThank you for choosing Wheelio! To proceed with your vehicle checkout, please provide the following OTP to the vehicle owner:\n\nOTP: %s\n\nEnsure you share this OTP with the owner before the expiration time to complete the rental process.\n\nBest regards,\nThe Wheelio Team"
+	initiateReturnOtpEmailContent = "Hello %s,\n\nThank you for choosing Wheelio! To proceed with your vehicle return, please provide the following OTP to the vehicle seeker:\n\nOTP: %s\n\nThis OTP will expire in 20 minutes.\n\nEnsure you share this OTP with the seeker before the expiration time to complete the vehicle return process.\n\nBest regards,\nThe Wheelio Team"
 )
 
 type Booking struct {
@@ -28,6 +36,7 @@ type Booking struct {
 	DropoffLocation       string     `json:"dropoffLocation"`
 	BookingAmount         float64    `json:"bookingAmount"`
 	OverdueFeeRatePerHour float64    `json:"overdueFeeRatePerHour"`
+	CancellationAllowed   bool       `json:"cancellationAllowed"`
 	ActualPickupTime      *time.Time `json:"actualPickupTime,omitempty"`
 	ActualDropoffTime     *time.Time `json:"actualDropoffTime,omitempty"`
 	ScheduledPickupTime   time.Time  `json:"scheduledPickupTime"`
@@ -45,6 +54,7 @@ type CreateBookingRequestBody struct {
 	DropoffLocation       string    `json:"dropoffLocation"`
 	BookingAmount         float64   `json:"bookingAmount"`
 	OverdueFeeRatePerHour float64   `json:"overdueFeeRatePerHour"`
+	CancellationAllowed   bool      `json:"cancellationAllowed"`
 	ScheduledPickupTime   time.Time `json:"scheduledPickupTime"`
 	ScheduledDropoffTime  time.Time `json:"scheduledDropoffTime"`
 }
@@ -54,6 +64,71 @@ type OtpToken struct {
 	BookingId int
 	Otp       string
 	ExpiresAt time.Time
+}
+
+type OtpRequestBody struct {
+	Otp string `json:"otp"`
+}
+
+type BookingData struct {
+	Id                      int       `json:"id"`
+	Status                  string    `json:"status"`
+	PickupLocation          string    `json:"pickupLocation"`
+	DropoffLocation         string    `json:"dropoffLocation"`
+	BookingAmount           float64   `json:"bookingAmount"`
+	OverdueFeeRatePerHour   float64   `json:"overdueFeeRatePerHour"`
+	CancellationAllowed     bool      `json:"cancellationAllowed"`
+	ScheduledPickupTime     time.Time `json:"scheduledPickupTime"`
+	ScheduledDropoffTime    time.Time `json:"scheduledDropoffTime"`
+	VehicleName             string    `json:"vehicleName"`
+	VehicleSeatCount        int       `json:"vehicleSeatCount"`
+	VehicleFuelType         string    `json:"vehicleFuelType"`
+	VehicleTransmissionType string    `json:"vehicleTransmissionType"`
+		VehicleImage            string `json:"vehicleImage"`
+}
+
+type PaginationParams struct {
+	Page       int `json:"page"`
+	PageSize   int `json:"pageSize"`
+	TotalCount int `json:"totalCount"`
+}
+
+type PaginatedBookingData struct {
+	Data       []BookingData    `json:"data"`
+	Pagination PaginationParams `json:"pagination"`
+}
+
+type BookingDetails struct {
+	Id                    int                   `json:"id"`
+	Status                string                `json:"status"`
+	PickupLocation        string                `json:"pickupLocation"`
+	DropoffLocation       string                `json:"dropoffLocation"`
+	BookingAmount         float64               `json:"bookingAmount"`
+	OverdueFeeRatePerHour float64               `json:"overdueFeeRatePerHour"`
+	CancellationAllowed   bool                  `json:"cancellationAllowed"`
+	ActualPickupTime      *time.Time            `json:"actualPickupTime,omitempty"`
+	ActualDropoffTime     *time.Time            `json:"actualDropoffTime,omitempty"`
+	ScheduledPickupTime   time.Time             `json:"scheduledPickupTime"`
+	ScheduledDropoffTime  time.Time             `json:"scheduledDropoffTime"`
+	Host                  BookingDetailsUser    `json:"host"`
+	Seeker                BookingDetailsUser    `json:"seeker"`
+	Vehicle               BookingDetailsVehicle `json:"vehicle"`
+}
+
+type BookingDetailsUser struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	PhoneNumber string `json:"phoneNumber"`
+}
+
+type BookingDetailsVehicle struct {
+	Id               int    `json:"id"`
+	Name             string `json:"name"`
+	FuelType         string `json:"fuelType"`
+	SeatCount        int    `json:"seatCount"`
+	TransmissionType string `json:"transmissionType"`
+	Image            string `json:"image"`
 }
 
 func (c CreateBookingRequestBody) validate() error {
@@ -75,10 +150,10 @@ func (c CreateBookingRequestBody) validate() error {
 		validationErrors = append(validationErrors, "scheduledPickupTime is required")
 	}
 
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).UTC()
+	now := time.Now().UTC()
+	earliestAllowedTime := now.Add(-21 * time.Hour)
 
-	if c.ScheduledPickupTime.Before(today) {
+	if c.ScheduledPickupTime.Before(earliestAllowedTime) {
 		validationErrors = append(validationErrors, "scheduledPickupTime must not be in past")
 	}
 
@@ -95,4 +170,38 @@ func (c CreateBookingRequestBody) validate() error {
 	}
 
 	return nil
+}
+
+func parseQueryParamToInt(r *http.Request, param string, defaultValue int) (int, error) {
+	query := r.URL.Query().Get(param)
+	if query == "" {
+		return defaultValue, nil
+	}
+
+	value, err := strconv.Atoi(query)
+	if err != nil {
+		return 0, err
+	}
+	return value, nil
+}
+
+func mapBookingDetailsRepoToBookingDetails(bookingDetails repository.BookingDetails) BookingDetails {
+	booking := BookingDetails{
+		Id:                    bookingDetails.Id,
+		Status:                bookingDetails.Status,
+		PickupLocation:        bookingDetails.PickupLocation,
+		DropoffLocation:       bookingDetails.DropoffLocation,
+		BookingAmount:         bookingDetails.BookingAmount,
+		OverdueFeeRatePerHour: bookingDetails.OverdueFeeRatePerHour,
+		CancellationAllowed:   bookingDetails.CancellationAllowed,
+		ActualPickupTime:      bookingDetails.ActualPickupTime,
+		ActualDropoffTime:     bookingDetails.ActualDropoffTime,
+		ScheduledPickupTime:   bookingDetails.ScheduledPickupTime,
+		ScheduledDropoffTime:  bookingDetails.ScheduledDropoffTime,
+		Host:                  BookingDetailsUser(bookingDetails.Host),
+		Seeker:                BookingDetailsUser(bookingDetails.Seeker),
+		Vehicle:               BookingDetailsVehicle(bookingDetails.Vehicle),
+	}
+
+	return booking
 }
