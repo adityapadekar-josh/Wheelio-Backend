@@ -122,6 +122,7 @@ const (
 					($2 <= b.scheduled_pickup_time AND b.scheduled_dropoff_time <= $3) 
 				)
 			)
+	ORDER BY v.created_at DESC
 	OFFSET $4
 	LIMIT $5;`
 
@@ -144,7 +145,10 @@ const (
 		v.pin_code,
 		COUNT(*) OVER() AS total_count
 	FROM vehicles v
-	WHERE host_id=$1
+	WHERE 
+		host_id=$1 AND
+		v.is_deleted = false
+	ORDER BY v.created_at DESC
 	OFFSET $2
 	LIMIT $3;`
 )

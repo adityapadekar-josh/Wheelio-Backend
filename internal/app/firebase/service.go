@@ -47,7 +47,33 @@ func InitFirebaseStorage(ctx context.Context, cfg config.Config) (*storage.Bucke
 		return nil, err
 	}
 
+	err = ConfigureCORS(ctx, bucket)
+	if err != nil {
+		slog.Error("failed to configure CORS, uploads may not work from browser", "error", err)
+		return nil, err
+	}
+
 	return bucket, nil
+}
+
+func ConfigureCORS(ctx context.Context, bucket *storage.BucketHandle) error {
+	cors := []storage.CORS{
+		{
+			MaxAge:          3600,
+			Methods:         []string{"PUT", "POST", "GET", "HEAD", "DELETE", "OPTIONS"},
+			Origins:         []string{"*"},
+			ResponseHeaders: []string{"Content-Type", "x-goog-meta-*"},
+		},
+	}
+
+	if _, err := bucket.Update(ctx, storage.BucketAttrsToUpdate{
+		CORS: cors,
+	}); err != nil {
+		slog.Error("failed to set CORS configuration", "error", err)
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) GenerateSignedURL(ctx context.Context, objectPath string, contentType string, expires time.Duration) (string, error) {
@@ -55,6 +81,10 @@ func (s *service) GenerateSignedURL(ctx context.Context, objectPath string, cont
 		Method:      "PUT",
 		ContentType: contentType,
 		Expires:     time.Now().Add(expires),
+		Headers: []string{
+			"Access-Control-Allow-Origin: *",
+			"Access-Control-Allow-Methods: PUT, POST, GET, HEAD, DELETE, OPTIONS",
+		},
 	}
 
 	url, err := s.bucket.SignedURL(objectPath, opts)

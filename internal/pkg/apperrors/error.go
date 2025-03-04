@@ -37,7 +37,7 @@ func MapError(err error) (statusCode int, errMessage string) {
 	switch err {
 	case ErrInvalidRequestBody, ErrInvalidQueryParams, ErrInvalidPickupDropoff, ErrInvalidPagination:
 		return http.StatusBadRequest, err.Error()
-	case ErrInvalidLoginCredentials, ErrUnauthorizedAccess:
+	case ErrUnauthorizedAccess:
 		return http.StatusUnauthorized, err.Error()
 	case ErrAccessForbidden:
 		return http.StatusForbidden, err.Error()
@@ -45,7 +45,7 @@ func MapError(err error) (statusCode int, errMessage string) {
 		return http.StatusNotFound, err.Error()
 	case ErrEmailAlreadyRegistered, ErrUserNotVerified, ErrBookingConflict:
 		return http.StatusConflict, err.Error()
-	case ErrInvalidToken:
+	case ErrInvalidToken, ErrInvalidLoginCredentials:
 		return http.StatusUnprocessableEntity, err.Error()
 	default:
 		return http.StatusInternalServerError, ErrInternalServer.Error()

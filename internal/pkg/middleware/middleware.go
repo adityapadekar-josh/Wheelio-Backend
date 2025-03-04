@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/config"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/apperrors"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/cryptokit"
 	"github.com/adityapadekar-josh/Wheelio-Backend.git/internal/pkg/response"
@@ -98,4 +99,21 @@ func AuthorizationMiddleware(allowedRoles ...string) Middleware {
 			next.ServeHTTP(w, r)
 		}
 	}
+}
+
+func CorsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg := config.GetConfig()
+		w.Header().Set("Access-Control-Allow-Origin", cfg.ClientURL)
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
