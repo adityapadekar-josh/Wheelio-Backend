@@ -20,15 +20,9 @@ type Service interface {
 }
 
 func NewService(bucket *storage.BucketHandle) Service {
-	svc := &service{
+	return &service{
 		bucket: bucket,
 	}
-
-	if err := svc.ConfigureCORS(); err != nil {
-		slog.Warn("failed to configure CORS, uploads may not work from browser", "error", err)
-	}
-
-	return svc
 }
 
 func InitFirebaseStorage(ctx context.Context, cfg config.Config) (*storage.BucketHandle, error) {
@@ -53,7 +47,33 @@ func InitFirebaseStorage(ctx context.Context, cfg config.Config) (*storage.Bucke
 		return nil, err
 	}
 
+	err = ConfigureCORS(ctx, bucket)
+	if err != nil {
+		slog.Error("failed to configure CORS, uploads may not work from browser", "error", err)
+		return nil, err
+	}
+
 	return bucket, nil
+}
+
+func ConfigureCORS(ctx context.Context, bucket *storage.BucketHandle) error {
+	cors := []storage.CORS{
+		{
+			MaxAge:          3600,
+			Methods:         []string{"PUT", "POST", "GET", "HEAD", "DELETE", "OPTIONS"},
+			Origins:         []string{"*"},
+			ResponseHeaders: []string{"Content-Type", "x-goog-meta-*"},
+		},
+	}
+
+	if _, err := bucket.Update(ctx, storage.BucketAttrsToUpdate{
+		CORS: cors,
+	}); err != nil {
+		slog.Error("failed to set CORS configuration", "error", err)
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) GenerateSignedURL(ctx context.Context, objectPath string, contentType string, expires time.Duration) (string, error) {
@@ -74,26 +94,4 @@ func (s *service) GenerateSignedURL(ctx context.Context, objectPath string, cont
 	}
 
 	return url, nil
-}
-
-func (s *service) ConfigureCORS() error {
-	ctx := context.Background()
-
-	cors := []storage.CORS{
-		{
-			MaxAge:          3600,
-			Methods:         []string{"PUT", "POST", "GET", "HEAD", "DELETE", "OPTIONS"},
-			Origins:         []string{"*"},
-			ResponseHeaders: []string{"Content-Type", "x-goog-meta-*"},
-		},
-	}
-
-	if _, err := s.bucket.Update(ctx, storage.BucketAttrsToUpdate{
-		CORS: cors,
-	}); err != nil {
-		slog.Error("failed to set CORS configuration", "error", err)
-		return err
-	}
-
-	return nil
 }
