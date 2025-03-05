@@ -197,16 +197,16 @@ const (
 			AND vi.featured = true
 			LIMIT 1
 		), '') AS image,
-		i.id AS invoice_id,
-		i.additional_fees,
-		i.tax,
-		i.tax_rate,
-		i.total_amount
+		COALESCE(i.id, 0) AS invoice_id,
+		COALESCE(i.additional_fees, 0) AS additional_fees,
+		COALESCE(i.tax, 0) AS tax,
+		COALESCE(i.tax_rate, 0) AS tax_rate,
+		COALESCE(i.total_amount, 0) AS total_amount
 	FROM bookings b
 	JOIN users h ON b.host_id = h.id
 	JOIN users s ON b.seeker_id = s.id
 	JOIN vehicles v ON b.vehicle_id = v.id
-	JOIN invoices i ON i.booking_id = b.id
+	LEFT JOIN invoices i ON i.booking_id = b.id
 	WHERE b.id = $1;`
 )
 
