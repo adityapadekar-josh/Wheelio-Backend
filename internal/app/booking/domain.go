@@ -84,7 +84,7 @@ type BookingData struct {
 	VehicleSeatCount        int       `json:"vehicleSeatCount"`
 	VehicleFuelType         string    `json:"vehicleFuelType"`
 	VehicleTransmissionType string    `json:"vehicleTransmissionType"`
-		VehicleImage            string `json:"vehicleImage"`
+	VehicleImage            string    `json:"vehicleImage"`
 }
 
 type PaginationParams struct {
@@ -113,6 +113,7 @@ type BookingDetails struct {
 	Host                  BookingDetailsUser    `json:"host"`
 	Seeker                BookingDetailsUser    `json:"seeker"`
 	Vehicle               BookingDetailsVehicle `json:"vehicle"`
+	Invoice               bookingDetailsInvoice `json:"invoice"`
 }
 
 type BookingDetailsUser struct {
@@ -129,6 +130,14 @@ type BookingDetailsVehicle struct {
 	SeatCount        int    `json:"seatCount"`
 	TransmissionType string `json:"transmissionType"`
 	Image            string `json:"image"`
+}
+
+type bookingDetailsInvoice struct {
+	Id             int     `json:"id"`
+	AdditionalFees float64 `json:"additionalFees"`
+	Tax            float64 `json:"tax"`
+	TaxRate        float64 `json:"taxRate"`
+	TotalAmount    float64 `json:"totalAmount"`
 }
 
 func (c CreateBookingRequestBody) validate() error {
@@ -201,6 +210,7 @@ func mapBookingDetailsRepoToBookingDetails(bookingDetails repository.BookingDeta
 		Host:                  BookingDetailsUser(bookingDetails.Host),
 		Seeker:                BookingDetailsUser(bookingDetails.Seeker),
 		Vehicle:               BookingDetailsVehicle(bookingDetails.Vehicle),
+		Invoice:               bookingDetailsInvoice(bookingDetails.Invoice),
 	}
 
 	return booking

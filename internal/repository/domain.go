@@ -190,7 +190,7 @@ type BookingData struct {
 	VehicleSeatCount        int
 	VehicleFuelType         string
 	VehicleTransmissionType string
-	VehicleImage string
+	VehicleImage            string
 }
 
 type GetSeekerBookingsParams struct {
@@ -220,6 +220,7 @@ type BookingDetails struct {
 	Host                  BookingDetailsUser
 	Seeker                BookingDetailsUser
 	Vehicle               BookingDetailsVehicle
+	Invoice               BookingDetailsInvoice
 }
 
 type BookingDetailsUser struct {
@@ -230,10 +231,18 @@ type BookingDetailsUser struct {
 }
 
 type BookingDetailsVehicle struct {
-	Id                  int
-	Name                string
-	FuelType            string
-	SeatCount           int
-	TransmissionType    string
-	Image    string
+	Id               int
+	Name             string
+	FuelType         string
+	SeatCount        int
+	TransmissionType string
+	Image            string
+}
+
+type BookingDetailsInvoice struct {
+	Id             int
+	AdditionalFees float64
+	Tax            float64
+	TaxRate        float64
+	TotalAmount    float64
 }
