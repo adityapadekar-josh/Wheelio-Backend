@@ -198,7 +198,7 @@ func (s *service) GetVehicleById(ctx context.Context, vehicleId int) (vehicle Ve
 
 func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (vehicles PaginatedVehicleOverview, err error) {
 	if params.PickupTimestamp.After(params.DropoffTimestamp) {
-		slog.Error("pickup time after the dropoff time", "error", err)
+		slog.Error("pickup time after the dropoff time")
 		return PaginatedVehicleOverview{}, apperrors.ErrInvalidPickupDropoff
 	}
 
@@ -243,7 +243,6 @@ func (s *service) GetVehicles(ctx context.Context, params GetVehiclesParams) (ve
 
 func (s *service) GetVehiclesForHost(ctx context.Context, page, limit int) (vehicles PaginatedVehicleOverview, err error) {
 	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
-
 	if !ok {
 		slog.Error("failed to retrieve user id from context")
 		return PaginatedVehicleOverview{}, apperrors.ErrInternalServer

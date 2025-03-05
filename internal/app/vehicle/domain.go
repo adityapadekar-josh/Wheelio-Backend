@@ -98,8 +98,8 @@ type PaginationParams struct {
 }
 
 type PaginatedVehicleOverview struct {
-	Data       []VehicleOverview  `json:"data"`
-	Pagination PaginationParams `json:"pagination"`
+	Data       []VehicleOverview `json:"data"`
+	Pagination PaginationParams  `json:"pagination"`
 }
 
 type GetVehiclesParams struct {
@@ -265,10 +265,12 @@ func parsePickupDropoffTimeStamp(r *http.Request) (time.Time, time.Time, error) 
 	dropoffQuery := r.URL.Query().Get("dropoff")
 
 	if (pickupQuery == "" && dropoffQuery != "") || (pickupQuery != "" && dropoffQuery == "") {
-		return time.Time{}, time.Time{}, fmt.Errorf("Invalid query parameters: Pickup and dropoff must both be provided or both omitted")
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid query parameters: pickup and dropoff must both be provided or both omitted")
 	}
 
-	pickup, dropoff := time.Now().UTC(), time.Now().UTC()
+	today := time.Now().UTC()
+	pickup := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+	dropoff := time.Date(today.Year(), today.Month(), today.Day(), 23, 59, 59, 999999999, time.UTC)
 	timestampLayout := time.RFC3339Nano
 	var err error
 
@@ -277,6 +279,9 @@ func parsePickupDropoffTimeStamp(r *http.Request) (time.Time, time.Time, error) 
 		if err != nil {
 			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse pickup time: %w", err)
 		}
+		if pickup.Location() != time.UTC {
+			return time.Time{}, time.Time{}, fmt.Errorf("pickup timestamp must be in UTC")
+		}
 	}
 
 	if dropoffQuery != "" {
@@ -284,10 +289,10 @@ func parsePickupDropoffTimeStamp(r *http.Request) (time.Time, time.Time, error) 
 		if err != nil {
 			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse dropoff time: %w", err)
 		}
+		if dropoff.Location() != time.UTC {
+			return time.Time{}, time.Time{}, fmt.Errorf("dropoff timestamp must be in UTC")
+		}
 	}
-
-	pickup = time.Date(pickup.Year(), pickup.Month(), pickup.Day(), 0, 0, 0, 0, pickup.Location()).UTC()
-	dropoff = time.Date(dropoff.Year(), dropoff.Month(), dropoff.Day(), 23, 59, 59, 999999, dropoff.Location()).UTC()
 
 	return pickup, dropoff, nil
 }

@@ -136,6 +136,7 @@ type Booking struct {
 	DropoffLocation       string
 	BookingAmount         float64
 	OverdueFeeRatePerHour float64
+	CancellationAllowed   bool
 	ActualPickupTime      *time.Time
 	ActualDropoffTime     *time.Time
 	ScheduledPickupTime   time.Time
@@ -153,6 +154,7 @@ type CreateBookingRequestBody struct {
 	DropoffLocation       string
 	BookingAmount         float64
 	OverdueFeeRatePerHour float64
+	CancellationAllowed   bool
 	ScheduledPickupTime   time.Time
 	ScheduledDropoffTime  time.Time
 }
@@ -162,4 +164,85 @@ type OtpToken struct {
 	BookingId int
 	Otp       string
 	ExpiresAt time.Time
+}
+
+type Invoice struct {
+	Id             int
+	BookingId      int
+	BookingAmount  float64
+	AdditionalFees float64
+	Tax            float64
+	TaxRate        float64
+	TotalAmount    float64
+}
+
+type BookingData struct {
+	Id                      int
+	Status                  string
+	PickupLocation          string
+	DropoffLocation         string
+	BookingAmount           float64
+	OverdueFeeRatePerHour   float64
+	CancellationAllowed     bool
+	ScheduledPickupTime     time.Time
+	ScheduledDropoffTime    time.Time
+	VehicleName             string
+	VehicleSeatCount        int
+	VehicleFuelType         string
+	VehicleTransmissionType string
+	VehicleImage            string
+}
+
+type GetSeekerBookingsParams struct {
+	SeekerId int
+	Offset   int
+	Limit    int
+}
+
+type GetHostBookingsParams struct {
+	HostId int
+	Offset int
+	Limit  int
+}
+
+type BookingDetails struct {
+	Id                    int
+	Status                string
+	PickupLocation        string
+	DropoffLocation       string
+	BookingAmount         float64
+	OverdueFeeRatePerHour float64
+	CancellationAllowed   bool
+	ActualPickupTime      *time.Time
+	ActualDropoffTime     *time.Time
+	ScheduledPickupTime   time.Time
+	ScheduledDropoffTime  time.Time
+	Host                  BookingDetailsUser
+	Seeker                BookingDetailsUser
+	Vehicle               BookingDetailsVehicle
+	Invoice               BookingDetailsInvoice
+}
+
+type BookingDetailsUser struct {
+	Id          int
+	Name        string
+	Email       string
+	PhoneNumber string
+}
+
+type BookingDetailsVehicle struct {
+	Id               int
+	Name             string
+	FuelType         string
+	SeatCount        int
+	TransmissionType string
+	Image            string
+}
+
+type BookingDetailsInvoice struct {
+	Id             int
+	AdditionalFees float64
+	Tax            float64
+	TaxRate        float64
+	TotalAmount    float64
 }

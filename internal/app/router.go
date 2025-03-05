@@ -90,7 +90,6 @@ func NewRouter(deps Dependencies) http.Handler {
 		"POST /api/v1/bookings",
 		middleware.ChainMiddleware(
 			booking.CreateBooking(deps.BookingService),
-			middleware.AuthorizationMiddleware(user.Seeker),
 			middleware.AuthenticationMiddleware,
 		),
 	)
@@ -98,6 +97,52 @@ func NewRouter(deps Dependencies) http.Handler {
 		"PATCH /api/v1/bookings/{id}/cancel",
 		middleware.ChainMiddleware(
 			booking.CancelBooking(deps.BookingService),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"PATCH /api/v1/bookings/{id}/pickup/confirm",
+		middleware.ChainMiddleware(
+			booking.ConfirmPickup(deps.BookingService),
+			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"POST /api/v1/bookings/{id}/return/initiate",
+		middleware.ChainMiddleware(
+			booking.InitiateReturn(deps.BookingService),
+			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"PATCH /api/v1/bookings/{id}/return/confirm",
+		middleware.ChainMiddleware(
+			booking.ConfirmReturn(deps.BookingService),
+			middleware.AuthorizationMiddleware(user.Seeker),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"GET /api/v1/bookings",
+		middleware.ChainMiddleware(
+			booking.GetSeekerBookings(deps.BookingService),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"GET /api/v1/bookings/host",
+		middleware.ChainMiddleware(
+			booking.GetHostBookings(deps.BookingService),
+			middleware.AuthorizationMiddleware(user.Host),
+			middleware.AuthenticationMiddleware,
+		),
+	)
+	router.HandleFunc(
+		"GET /api/v1/bookings/{id}",
+		middleware.ChainMiddleware(
+			booking.GetBookingDetailsById(deps.BookingService),
 			middleware.AuthenticationMiddleware,
 		),
 	)

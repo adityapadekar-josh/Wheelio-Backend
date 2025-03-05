@@ -95,12 +95,12 @@ const (
 		v.seat_count,
 		v.transmission_type,
 		COALESCE((
-				SELECT vi.url
-				FROM vehicle_images vi
-				WHERE vi.vehicle_id = v.id
-				AND vi.featured = true
-				LIMIT 1
-			), '') AS image,
+			SELECT vi.url
+			FROM vehicle_images vi
+			WHERE vi.vehicle_id = v.id
+			AND vi.featured = true
+			LIMIT 1
+		), '') AS image,
 		v.rate_per_hour,
 		v.address,
 		v.pin_code,
@@ -134,12 +134,12 @@ const (
 		v.seat_count,
 		v.transmission_type,
 		COALESCE((
-				SELECT vi.url
-				FROM vehicle_images vi
-				WHERE vi.vehicle_id = v.id
-				AND vi.featured = true
-				LIMIT 1
-			), '') AS image,
+			SELECT vi.url
+			FROM vehicle_images vi
+			WHERE vi.vehicle_id = v.id
+			AND vi.featured = true
+			LIMIT 1
+		), '') AS image,
 		v.rate_per_hour,
 		v.address,
 		v.pin_code,
