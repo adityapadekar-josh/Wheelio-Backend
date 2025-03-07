@@ -113,7 +113,7 @@ type BookingDetails struct {
 	Host                  BookingDetailsUser    `json:"host"`
 	Seeker                BookingDetailsUser    `json:"seeker"`
 	Vehicle               BookingDetailsVehicle `json:"vehicle"`
-	Invoice               bookingDetailsInvoice `json:"invoice"`
+	Invoice               BookingDetailsInvoice `json:"invoice"`
 }
 
 type BookingDetailsUser struct {
@@ -132,7 +132,7 @@ type BookingDetailsVehicle struct {
 	Image            string `json:"image"`
 }
 
-type bookingDetailsInvoice struct {
+type BookingDetailsInvoice struct {
 	Id             int     `json:"id"`
 	AdditionalFees float64 `json:"additionalFees"`
 	Tax            float64 `json:"tax"`
@@ -210,7 +210,7 @@ func mapBookingDetailsRepoToBookingDetails(bookingDetails repository.BookingDeta
 		Host:                  BookingDetailsUser(bookingDetails.Host),
 		Seeker:                BookingDetailsUser(bookingDetails.Seeker),
 		Vehicle:               BookingDetailsVehicle(bookingDetails.Vehicle),
-		Invoice:               bookingDetailsInvoice(bookingDetails.Invoice),
+		Invoice:               BookingDetailsInvoice(bookingDetails.Invoice),
 	}
 
 	return booking

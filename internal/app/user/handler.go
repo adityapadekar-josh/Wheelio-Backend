@@ -160,3 +160,19 @@ func UpgradeUserRoleToHost(userService Service) http.HandlerFunc {
 		response.WriteJson(w, http.StatusOK, "user successfully upgraded to HOST", nil)
 	}
 }
+
+func RefreshAccessToken(userService Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		loginData, err := userService.RefreshAccessToken(ctx)
+		if err != nil {
+			slog.Error("failed to refresh access token", "error", err)
+			status, errorMessage := apperrors.MapError(err)
+			response.WriteJson(w, status, errorMessage, nil)
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, "access token refreshed successfully", loginData)
+	}
+}
