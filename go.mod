@@ -10,6 +10,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.33.0
 	google.golang.org/api v0.221.0
 )
@@ -30,6 +31,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.48.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -41,7 +43,10 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/undefinedlabs/go-mpatch v1.0.7 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.32.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.58.0 // indirect
