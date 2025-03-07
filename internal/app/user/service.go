@@ -29,6 +29,7 @@ type Service interface {
 	GetLoggedInUser(ctx context.Context) (user User, err error)
 	UpgradeUserRoleToHost(ctx context.Context) (err error)
 	GetUserById(ctx context.Context, userId int) (user User, err error)
+	RefreshAccessToken(ctx context.Context) (accessToken AccessToken, err error)
 }
 
 func NewService(userRepository repository.UserRepository, emailService email.Service) Service {
@@ -281,4 +282,31 @@ func (s *service) GetUserById(ctx context.Context, userId int) (user User, err e
 	}
 
 	return User(userData), nil
+}
+
+func (s *service) RefreshAccessToken(ctx context.Context) (accessToken AccessToken, err error) {
+	userId, ok := ctx.Value(middleware.RequestContextUserIdKey).(int)
+	if !ok {
+		slog.Error("failed to retrieve user id from context")
+		return AccessToken{}, apperrors.ErrInternalServer
+	}
+
+	user, err := s.userRepository.GetUserById(ctx, nil, userId)
+	if err != nil {
+		slog.Error("user not found by id", "error", err)
+		return AccessToken{}, apperrors.ErrInternalServer
+	}
+
+	token, err := cryptokit.CreateJWTToken(jwt.MapClaims{
+		"id":    user.Id,
+		"email": user.Email,
+		"role":  user.Role,
+		"exp":   time.Now().Add(accessTokenTTL).Unix(),
+	})
+	if err != nil {
+		slog.Error("failed to create jwt token", "error", err)
+		return AccessToken{}, apperrors.ErrJWTCreationFailed
+	}
+
+	return AccessToken{AccessToken: token}, nil
 }

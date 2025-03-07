@@ -37,6 +37,13 @@ func NewRouter(deps Dependencies) http.Handler {
 			middleware.AuthenticationMiddleware,
 		),
 	)
+	router.HandleFunc(
+		"POST /api/v1/auth/access/refresh",
+		middleware.ChainMiddleware(
+			user.RefreshAccessToken(deps.UserService),
+			middleware.AuthenticationMiddleware,
+		),
+	)
 
 	router.HandleFunc(
 		"POST /api/v1/vehicles",
